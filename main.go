@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/robfig/cron/v3"
 )
 
@@ -24,6 +25,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//init server
+	server := echo.New()
+
+	//start server
+	server.Start(":"+config.LoadConfig.Server.Port)
 
 	c := cron.New()
 	// Schedule cron job to run every hour
