@@ -10,7 +10,7 @@ type Config struct {
 }
 
 type Server struct {
-	Port int `yaml:"port"`
+	Port string `yaml:"port"`
 }
 
 var LoadConfig Config
