@@ -13,18 +13,21 @@ type Server struct {
 	Port int `yaml:"port"`
 }
 
-var AppConfig Config
+var LoadConfig Config
 
 func GetConfig() error {
 	//open env file and read config
-	file, err := os.Open("/env.yml")
+	file, err := os.Open("env.yml")
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 
 	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&AppConfig)
+	err = decoder.Decode(&LoadConfig)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
