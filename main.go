@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"erp-job/config"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/robfig/cron/v3"
@@ -17,6 +19,12 @@ type Data struct {
 }
 
 func main() {
+	//config
+	err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	c := cron.New()
 	// Schedule cron job to run every hour
 	c.AddFunc("0 0 * * * *", func() {
@@ -50,6 +58,9 @@ func main() {
 			fmt.Println("Error sending data to second API:", err)
 			return
 		}
+		if resp.StatusCode != http.StatusOK {
+			return
+		}
 		defer resp.Body.Close()
 
 		// Print response from second API
@@ -58,5 +69,4 @@ func main() {
 	c.Start()
 
 	// Wait indefinitely so the program doesn't exit
-	select {}
 }
