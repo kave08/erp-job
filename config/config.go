@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -11,6 +12,10 @@ type Config struct {
 
 type Server struct {
 	Port string `yaml:"port"`
+}
+
+type Base_Url struct {
+	base_url string `yaml:"base_url"`
 }
 
 var LoadConfig Config
