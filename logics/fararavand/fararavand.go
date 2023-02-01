@@ -35,6 +35,7 @@ func NewFararavand() FararavandInterface {
 	}
 }
 
+// GetBaseData gets all base information from the first ERP
 func (f *Fararavand) GetBaseData() (*fararavand.BaseData, error) {
 	var newData = new(fararavand.BaseData)
 
@@ -55,6 +56,7 @@ func (f *Fararavand) GetBaseData() (*fararavand.BaseData, error) {
 	return newData, nil
 }
 
+// GetProducts gets all products data from the first ERP
 func (f *Fararavand) GetProducts() (*fararavand.Products, error) {
 	var newProducts = new(fararavand.Products)
 
@@ -75,6 +77,7 @@ func (f *Fararavand) GetProducts() (*fararavand.Products, error) {
 	return newProducts, nil
 }
 
+// GetCustomers get all customers' data from the first ERP
 func (f *Fararavand) GetCustomers() (*fararavand.Customers, error) {
 	var newCustomers = new(fararavand.Customers)
 
@@ -95,6 +98,7 @@ func (f *Fararavand) GetCustomers() (*fararavand.Customers, error) {
 	return newCustomers, nil
 }
 
+// GetInvoices get all invoices' data from the first ERP
 func (f *Fararavand) GetInvoices() (*fararavand.Invoices, error) {
 	var newInvoices = new(fararavand.Invoices)
 
@@ -115,6 +119,7 @@ func (f *Fararavand) GetInvoices() (*fararavand.Invoices, error) {
 	return newInvoices, nil
 }
 
+// GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) GetTreasuries() (*fararavand.Treasuries, error) {
 	var newTreasuries = new(fararavand.Treasuries)
 
@@ -135,6 +140,7 @@ func (f *Fararavand) GetTreasuries() (*fararavand.Treasuries, error) {
 	return newTreasuries, nil
 }
 
+// GetInvoiceReturns get all revert invoices data from the first ERP
 func (f *Fararavand) GetInvoiceReturns() (*fararavand.Reverted, error) {
 	var newReverted = new(fararavand.Reverted)
 
