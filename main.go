@@ -4,20 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"erp-job/config"
+	"erp-job/models/fararavand"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/robfig/cron/v3"
+	"github.com/robfig/cron"
 )
-
-type Data struct {
-	Name  string   `json:"name"`
-	Age   int      `json:"age"`
-	Items []string `json:"items"`
-}
 
 func main() {
 	//config
@@ -26,11 +20,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//init server
-	server := echo.New()
-
-	//start server
-	server.Start(":"+config.LoadConfig.Server.Port)
 
 	c := cron.New()
 	// Schedule cron job to run every hour
@@ -44,13 +33,13 @@ func main() {
 		defer res.Body.Close()
 
 		// Read response body and unmarshal into struct
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println("Error reading response body:", err)
 			return
 		}
 
-		var data []Data
+		var data []fararavand.BaseData
 		json.Unmarshal(body, &data)
 
 		// Send data to second API
@@ -75,5 +64,9 @@ func main() {
 	})
 	c.Start()
 
-	// Wait indefinitely so the program doesn't exit
+	//Wait indefinitely so the program doesn't exit
+}
+
+func NewFararavand() {
+	panic("unimplemented")
 }
