@@ -6,19 +6,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	Server `yaml:"server"`
+type config struct {
+	BaseURL string `yaml:"BASE_URL"`
+	ApiKey  string `yaml:"API_KEY"`
 }
 
 type Server struct {
 	Port string `yaml:"port"`
 }
 
-type Base_Url struct {
-	base_url string `yaml:"base_url"`
-}
-
-var LoadConfig Config
+var Cfg config
 
 func GetConfig() error {
 	//open env file and read config
@@ -29,7 +26,7 @@ func GetConfig() error {
 	defer file.Close()
 
 	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&LoadConfig)
+	err = decoder.Decode(&Cfg)
 	if err != nil {
 		return err
 	}
