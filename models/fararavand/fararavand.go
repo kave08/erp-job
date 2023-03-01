@@ -1,6 +1,5 @@
 package fararavand
 
-
 type BaseData struct {
 	PaymentTypes []struct {
 		ID   int    `json:"id"`
@@ -60,7 +59,7 @@ type BaseData struct {
 	} `json:"secondProductGroup"`
 }
 
-type Products []struct {
+type Products struct {
 	ID                   int     `json:"id"`
 	Name                 string  `json:"name"`
 	Code                 string  `json:"code"`
@@ -83,7 +82,7 @@ type Products []struct {
 	HasMalyat            bool    `json:"hasMalyat"`
 }
 
-type Customers []struct {
+type Customers struct {
 	ID             int    `json:"id"`
 	BranchID       int    `json:"branchId"`
 	BranchName     string `json:"branchName"`
@@ -105,7 +104,7 @@ type Customers []struct {
 	Mobile         string `json:"mobile"`
 }
 
-type Invoices []struct {
+type Invoices struct {
 	BranchID           int    `json:"branchId"`
 	CodeDoreh          int    `json:"codeDoreh"`
 	InvoiceID          int    `json:"invoiceId"`
@@ -130,7 +129,7 @@ type Invoices []struct {
 	IsJayezeh          int    `json:"isJayezeh"`
 }
 
-type Treasuries []struct {
+type Treasuries struct {
 	CodeDoreh                 int         `json:"codeDoreh"`
 	BranchID                  int         `json:"branchId"`
 	SanadTypeID               int         `json:"sanadTypeId"`
@@ -147,7 +146,7 @@ type Treasuries []struct {
 	ShomarehSanad             string      `json:"shomarehSanad"`
 }
 
-type Reverted []struct {
+type Reverted struct {
 	BranchID                 int    `json:"branchId"`
 	CodeDoreh                int    `json:"codeDoreh"`
 	InvoiceID                int    `json:"invoiceId"`
