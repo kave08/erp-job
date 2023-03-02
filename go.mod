@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/robfig/cron v1.2.0
 	gopkg.in/yaml.v2 v2.4.0
 )
