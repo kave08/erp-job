@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func initializeSQLLite() (*sql.DB, error) {
+func initializeSQLite() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "./erp.db")
 	if err != nil {
 		log.Panicln(err)
@@ -13,7 +13,3 @@ func initializeSQLLite() (*sql.DB, error) {
 
 	return db, nil
 }
-
-// // insert
-// stmt, err := db.Prepare("INSERT INTO userinfo(username, departname, created) values(?,?,?)")
-// log.Panicln(err)
