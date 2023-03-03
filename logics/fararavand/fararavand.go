@@ -78,9 +78,9 @@ func (f *Fararavand) GetProducts() ([]fararavand.Products, error) {
 		return nil, err
 	}
 
-	lastId := newProducts[len(newProducts)-1].ID
+	lastId := newProducts[len(newProducts)-1].ID // lastid => 1100
 	// get last product id
-	pId, err := f.repos.Database.GetProduct(lastId)
+	pId, err := f.repos.Database.GetProduct() //pid => 1000
 	if err != nil {
 		return nil, err
 	}
