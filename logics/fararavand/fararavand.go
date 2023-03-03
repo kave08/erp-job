@@ -38,7 +38,7 @@ func NewFararavand() FararavandInterface {
 	}
 }
 
-func NewLogic(repos *repository.Repository) *Fararavand {
+func NewLogics(repos *repository.Repository) *Fararavand {
 	return &Fararavand{
 		repos: repos,
 	}
