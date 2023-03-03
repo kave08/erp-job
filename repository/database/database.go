@@ -29,19 +29,19 @@ const (
 
 type DatabaseInterface interface {
 	InsertProduct(p_id int) error
-	GetProduct(p_id int) (int, error)
+	GetProduct() (p_id int, err error)
 
 	InsertCustomer(c_id int) error
-	GetCustomer(c_id int) (int, error)
+	GetCustomer() (c_id int, err error)
 
 	InsertInvoice(i_id int) error
-	GetInvoice(i_id int) (int, error)
+	GetInvoice() (i_id int, err error)
 
 	InsertTreasuries(t_id int) error
-	GetTreasuries(t_id int) (int, error)
+	GetTreasuries() (t_id int, err error)
 
 	InsertReverted(r_id int) error
-	GetReverted(r_id int) (int, error)
+	GetReverted() (r_id int, err error)
 }
 
 type Database struct {
@@ -55,8 +55,8 @@ func NewDatabase(sdb *sql.DB) DatabaseInterface {
 }
 
 // GetCustomer implements DatabaseInterface
-func (d *Database) GetCustomer(c_id int) (int, error) {
-	err := d.sdb.QueryRow(GetCustomerMaxIdQuery, c_id).Scan(c_id)
+func (d *Database) GetCustomer() (c_id int, err error) {
+	err = d.sdb.QueryRow(GetCustomerMaxIdQuery).Err()
 	if err != nil {
 		return 0, err
 	}
@@ -64,13 +64,13 @@ func (d *Database) GetCustomer(c_id int) (int, error) {
 }
 
 // GetInvoice implements DatabaseInterface
-func (d *Database) GetInvoice(i_id int) (int, error) {
+func (d *Database) GetInvoice() (i_id int, err error) {
 	panic("unimplemented")
 }
 
 // GetProduct implements DatabaseInterface
-func (d *Database) GetProduct(p_id int) (int, error) {
-	err := d.sdb.QueryRow(GetProductMaxIdQuery, p_id).Scan(p_id)
+func (d *Database) GetProduct() (p_id int, err error) {
+	err = d.sdb.QueryRow(GetProductMaxIdQuery).Err()
 	if err != nil {
 		return 0, err
 	}
@@ -78,12 +78,12 @@ func (d *Database) GetProduct(p_id int) (int, error) {
 }
 
 // GetReverted implements DatabaseInterface
-func (d *Database) GetReverted(r_id int) (int, error) {
+func (d *Database) GetReverted() (r_id int, err error) {
 	panic("unimplemented")
 }
 
 // GetTreasuries implements DatabaseInterface
-func (d *Database) GetTreasuries(t_id int) (int, error) {
+func (d *Database) GetTreasuries() (t_id int, err error) {
 	panic("unimplemented")
 }
 
