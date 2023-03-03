@@ -3,23 +3,17 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"erp-job/config"
+	"erp-job/cmd"
 	"erp-job/models/fararavand"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/robfig/cron"
 )
 
 func main() {
-	//config
-	err := config.GetConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	cmd.Execute()
 
 	c := cron.New()
 	// Schedule cron job to run every hour
