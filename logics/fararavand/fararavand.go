@@ -51,7 +51,7 @@ func (f *Fararavand) GetBaseData() (*fararavand.BaseData, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newData).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetBaseData),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetBaseData),
 		)
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (f *Fararavand) GetProducts() ([]fararavand.Products, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newProducts).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetProducts),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetProducts),
 		)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (f *Fararavand) GetCustomers() ([]fararavand.Customers, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newCustomers).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetCustomers),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetCustomers),
 		)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (f *Fararavand) GetInvoices() ([]fararavand.Invoices, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newInvoices).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetInvoices),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetInvoices),
 		)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func (f *Fararavand) GetTreasuries() ([]fararavand.Treasuries, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newTreasuries).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetTreasuries),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetTreasuries),
 		)
 	if err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (f *Fararavand) GetInvoiceReturns() ([]fararavand.Reverted, error) {
 	resp, err := f.restyClient.R().
 		SetResult(newReverted).
 		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, logics.FararavandGetInvoiceReturns),
+			fmt.Sprintf("%s/%s", f.baseUrl, logics.FGetInvoiceReturns),
 		)
 	if err != nil {
 		return nil, err
