@@ -1,20 +1,24 @@
 package logics
 
 const (
-	FararavandGetBaseData         = "GetBaseData"
-	FararavandGetProducts         = "GetProducts"
-	FararavandGetCustomers        = "GetCustomers"
-	FararavandGetInvoices         = "GetInvoices"
-	FararavandGetTreasuries       = "GetTreasuries"
-	FararavandGetInvoiceReturns   = "GetInvoiceReturns"
-	AryanSaleOrder                = "SaleOrder"
-	AryanSaleCustomer             = "SaleCustomer"
-	AryanSaleTypeSelect           = "SaleTypeSelect"
-	AryanSaleCenter4SaleSelect    = "SaleCenter4SaleSelect"
-	AryanSalePaymentSelect        = "SalePaymentSelect"
-	AryanSaleCenterSelect         = "SaleCenterSelect"
-	AryanDeliverCenter_SaleSelect = "DeliverCenter_SaleSelect"
-	AryanSalerSelect              = "SalerSelect"
+	FGetBaseData              = "GetBaseData"
+	FGetProducts              = "GetProducts"
+	FGetCustomers             = "GetCustomers"
+	FGetInvoices              = "GetInvoices"
+	FGetTreasuries            = "GetTreasuries"
+	FGetInvoiceReturns        = "GetInvoiceReturns"
+	ASaleOrder                = "SaleOrder"
+	ASaleCustomer             = "SaleCustomer"
+	ASaleTypeSelect           = "SaleTypeSelect"
+	ASaleCenter4SaleSelect    = "SaleCenter4SaleSelect"
+	ASalePaymentSelect        = "SalePaymentSelect"
+	ASaleCenterSelect         = "SaleCenterSelect"
+	ADeliverCenter_SaleSelect = "DeliverCenter_SaleSelect"
+	ASalerSelect              = "SalerSelect"
+	ASaleSellerVisitor        = "SaleSellerVisitor"
+	AGoods                    = "Goods"
+	ASaleProforma             = "SaleProforma"
+	ASaleFactor               = "SaleFactor"
 )
 
 const (
