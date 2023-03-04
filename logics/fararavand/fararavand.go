@@ -1,7 +1,6 @@
 package fararavand
 
 import (
-	"database/sql"
 	"erp-job/config"
 	"erp-job/logics"
 	"erp-job/models/fararavand"
@@ -78,26 +77,26 @@ func (f *Fararavand) GetProducts() ([]fararavand.Products, error) {
 		return nil, err
 	}
 
-	lastId := newProducts[len(newProducts)-1].ID // lastid => 1100
-	// get last product id
-	pId, err := f.repos.Database.GetProduct() //pid => 1000
+	// get last product id from response
+	lastId := newProducts[len(newProducts)-1].ID
+	// get last product id from data
+	pId, err := f.repos.Database.GetProduct()
 	if err != nil {
 		return nil, err
 	}
-	//check if product is empty and insert
+	// if product is empty insert in db
 	if pId == 0 {
 		err = f.repos.Database.InsertProduct(lastId)
-		if err != sql.ErrNoRows {
+		if err != nil {
 			return nil, err
 		}
 	}
-
-	// check if product id already exits from db and fetch product id bigger than last product id
+	// fetch new product id
 	if lastId > pId {
-		newProducts = newProducts[:lastId-pId]
-		//afeter get last product id and send data to db, insert new product id into db
+		newProducts = newProducts[pId:]
+		//insert new product id into db
 		err = f.repos.Database.InsertProduct(lastId)
-		if err != sql.ErrNoRows {
+		if err != nil {
 			return nil, err
 		}
 		return newProducts, err
