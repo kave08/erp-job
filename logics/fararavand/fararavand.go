@@ -77,24 +77,18 @@ func (f *Fararavand) GetProducts() ([]fararavand.Products, error) {
 		return nil, err
 	}
 
-	// get last product id from response
+	// get last product id from response --100
 	lastId := newProducts[len(newProducts)-1].ID
-	// get last product id from data
+	// get last product id from data --80
 	pId, err := f.repos.Database.GetProduct()
 	if err != nil {
 		return nil, err
-	}
-	// if product is empty insert in db
-	if pId == 0 {
-		err = f.repos.Database.InsertProduct(lastId)
-		if err != nil {
-			return nil, err
-		}
 	}
 	// fetch new product id
 	if lastId > pId {
 		newProducts = newProducts[pId:]
 		//insert new product id into db
+		//
 		err = f.repos.Database.InsertProduct(lastId)
 		if err != nil {
 			return nil, err
@@ -121,6 +115,31 @@ func (f *Fararavand) GetCustomers() ([]fararavand.Customers, error) {
 		)
 	if err != nil {
 		return nil, err
+	}
+
+	// get last customer id from response
+	lastId := newCustomers[len(newCustomers)-1].ID
+	// get last customer id from data
+	pId, err := f.repos.Database.GetCustomer()
+	if err != nil {
+		return nil, err
+	}
+	// if customer id is empty insert in db
+	if pId == 0 {
+		err = f.repos.Database.InsertCustomer(lastId)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// fetch new customer id
+	if lastId > pId {
+		newCustomers = newCustomers[pId:]
+		//insert new customer id into db
+		err = f.repos.Database.InsertCustomer(lastId)
+		if err != nil {
+			return nil, err
+		}
+		return newCustomers, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
