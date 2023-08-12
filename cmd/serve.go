@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"erp-job/config"
-	"erp-job/models/fararavand"
+	"erp-job/logics/fararavand"
 	"erp-job/repository"
 
 	"github.com/labstack/echo/v4"
@@ -23,6 +23,7 @@ func serve() {
 
 	repos := repository.NewRepository(dbs.SqlitConnection)
 	lgcs := fararavand.NewLogics(repos)
+	_ = lgcs
 
 	e := echo.New()
 	e.HideBanner = false
