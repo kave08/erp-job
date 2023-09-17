@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"erp-job/config"
-	"erp-job/logics/fararavand"
+	"erp-job/logics"
 	"erp-job/repository"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/cobra"
@@ -22,9 +23,9 @@ func serve() {
 	dbs := config.LoadConfig(configPath)
 
 	repos := repository.NewRepository(dbs.SqlitConnection)
-	lgcs := fararavand.NewLogics(repos)
-	_ = lgcs
-
+	ar := logics.NewAryan(repos)
+	fr := logics.NewFararavand(repos, ar)
+	fmt.Println(fr)
 	e := echo.New()
 	e.HideBanner = false
 
