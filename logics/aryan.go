@@ -6,12 +6,14 @@ import (
 	"erp-job/repository"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 )
 
 type AryanInterface interface {
-	PostSaleOrder(fp []models.FararavandProducts) (*resty.Response, error)
+	PostSaleFactor(fp []models.Fararavand) (*resty.Response, error)
+	PostSaleCustomer(fp []models.Fararavand) (*resty.Response, error)
 }
 
 type Aryan struct {
@@ -32,19 +34,20 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 }
 
 // PostSalesOrder Post all sale order data to the secound ERP
-func (a *Aryan) PostSaleOrder(fp []models.FararavandProducts) (*resty.Response, error) {
-	var newGoods []models.AryanGoods
+func (a *Aryan) PostSaleFactor(fp []models.Fararavand) (*resty.Response, error) {
+	var newSaleFactor models.Aryan
 
 	for _, item := range fp {
-		newGoods = append(newGoods, models.AryanGoods{
-			Level1: item.BrandID,
-			// TODO: fix this
+		newSaleFactor = append(newSaleFactor, models.Aryan{
+			SaleFactor{
+				CustomerId: item.CustomerId,
+			},
 		})
 	}
-
-	res, err := a.restyClient.R().SetBody(newGoods).Post("asdasdasdasd")
+	
+	res, err := a.restyClient.R().SetBody(newSaleFactor).Post("asdasdasdasd")
 	if err != nil {
-		// TOOD: handle erro
+		return nil, err
 	}
 
 	if res.StatusCode() != http.StatusOK {
@@ -55,42 +58,19 @@ func (a *Aryan) PostSaleOrder(fp []models.FararavandProducts) (*resty.Response, 
 }
 
 // PostSaleCustomer Post all sale customer data to the secound ERP
-func (a *Aryan) PostSaleCustomer(fp []models.FararavandProducts) (*resty.Response, error) {
-	var newGoods []models.AryanGoods
+func (a *Aryan) PostSaleCustomer(fp []models.FararavandCustomers) (*resty.Response, error) {
+	var newSaleCustomer []models.AryanSaleCustomer
 
 	for _, item := range fp {
-		newGoods = append(newGoods, models.AryanGoods{
-			Level1: item.BrandID,
-			// TODO: fix this
+		newSaleCustomer = append(newSaleCustomer, models.AryanSaleCustomer{
+			CustomerID:   item.CustomerId,
+			CustomerCode: strconv.Itoa(item.CustomerCodePosti),
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newGoods).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSaleCustomer).Post("asdasdasdasd")
 	if err != nil {
-		// TOOD: handle erro
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
-	}
-
-	return res, nil
-}
-
-// PostSaleCustomer Post all sale customer data to the secound ERP
-func (a *Aryan) PostSaleTypeSelect(fp []models.FararavandProducts) (*resty.Response, error) {
-	var newGoods []models.AryanGoods
-
-	for _, item := range fp {
-		newGoods = append(newGoods, models.AryanGoods{
-			Level1: item.BrandID,
-			// TODO: fix this
-		})
-	}
-
-	res, err := a.restyClient.R().SetBody(newGoods).Post("asdasdasdasd")
-	if err != nil {
-		// TOOD: handle erro
+		return nil, err
 	}
 
 	if res.StatusCode() != http.StatusOK {
