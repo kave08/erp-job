@@ -12,12 +12,12 @@ import (
 )
 
 type FararavandInterface interface {
-	GetBaseData() (*models.FararavandBaseData, error)
-	GetProducts() ([]models.FararavandProducts, error)
-	GetCustomers() ([]models.FararavandCustomers, error)
-	GetInvoices() ([]models.FararavandInvoices, error)
-	GetTreasuries() ([]models.FararavandTreasuries, error)
-	GetInvoiceReturns() ([]models.FararavandReverted, error)
+	GetBaseData() (*models.Fararavand, error)
+	GetProducts() ([]models.Fararavand, error)
+	GetCustomers() ([]models.Fararavand, error)
+	GetInvoices() ([]models.Fararavand, error)
+	GetTreasuries() ([]models.Fararavand, error)
+	GetInvoiceReturns() ([]models.Fararavand, error)
 }
 
 type Fararavand struct {
@@ -40,8 +40,8 @@ func NewFararavand(repos *repository.Repository, aryan AryanInterface) Fararavan
 }
 
 // GetBaseData gets all base information from the first ERP
-func (f *Fararavand) GetBaseData() (*models.FararavandBaseData, error) {
-	var newData = new(models.FararavandBaseData)
+func (f *Fararavand) GetBaseData() (*models.Fararavand, error) {
+	var newData = new(models.Fararavand)
 
 	resp, err := f.restyClient.R().
 		SetResult(newData).
@@ -61,8 +61,8 @@ func (f *Fararavand) GetBaseData() (*models.FararavandBaseData, error) {
 }
 
 // GetProducts gets all products data from the first ERP
-func (f *Fararavand) GetProducts() ([]models.FararavandProducts, error) {
-	var newProducts []models.FararavandProducts
+func (f *Fararavand) GetProducts() ([]models.Fararavand, error) {
+	var newProducts []models.Fararavand
 
 	resp, err := f.restyClient.R().
 		SetResult(newProducts).
@@ -84,7 +84,7 @@ func (f *Fararavand) GetProducts() ([]models.FararavandProducts, error) {
 	if lastId > pId {
 		newProducts = newProducts[pId:]
 		//insert new product id into db
-		res, err := f.aryan.PostGoods(newProducts)
+		res, err := f.aryan.PostSaleFactor(newProducts)
 
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertProduct(lastId)
@@ -104,8 +104,8 @@ func (f *Fararavand) GetProducts() ([]models.FararavandProducts, error) {
 }
 
 // GetCustomers get all customers' data from the first ERP
-func (f *Fararavand) GetCustomers() ([]models.FararavandCustomers, error) {
-	var newCustomers []models.FararavandCustomers
+func (f *Fararavand) GetCustomers() ([]models.Fararavand, error) {
+	var newCustomers []models.Fararavand
 
 	resp, err := f.restyClient.R().
 		SetResult(newCustomers).
@@ -119,21 +119,22 @@ func (f *Fararavand) GetCustomers() ([]models.FararavandCustomers, error) {
 	// get last customer id from response
 	lastId := newCustomers[len(newCustomers)-1].ID
 	// get last customer id from data
-	pId, err := f.repos.Database.GetCustomer()
+	cId, err := f.repos.Database.GetCustomer()
 	if err != nil {
 		return nil, err
 	}
 	// if customer id is empty insert in db
-	if pId == 0 {
-		err = f.repos.Database.InsertCustomer(lastId)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// if pId == 0 {
+	// 	err = f.repos.Database.InsertCustomer(lastId)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 	// fetch new customer id
-	if lastId > pId {
-		newCustomers = newCustomers[pId:]
+	if lastId > cId {
+		newCustomers = newCustomers[cId:]
 		//insert new customer id into db
+		res, err := f.aryan.PostSaleFactor(newCustomers)
 		err = f.repos.Database.InsertCustomer(lastId)
 		if err != nil {
 			return nil, err
@@ -150,8 +151,8 @@ func (f *Fararavand) GetCustomers() ([]models.FararavandCustomers, error) {
 }
 
 // GetInvoices get all invoices' data from the first ERP
-func (f *Fararavand) GetInvoices() ([]models.FararavandInvoices, error) {
-	var newInvoices []models.FararavandInvoices
+func (f *Fararavand) GetInvoices() ([]models.Fararavand, error) {
+	var newInvoices []models.Fararavand
 
 	resp, err := f.restyClient.R().
 		SetResult(newInvoices).
@@ -171,7 +172,7 @@ func (f *Fararavand) GetInvoices() ([]models.FararavandInvoices, error) {
 }
 
 // GetTreasuries get all treasuries data from the first ERP
-func (f *Fararavand) GetTreasuries() ([]models.FararavandTreasuries, error) {
+func (f *Fararavand) GetTreasuries() ([]models.Fararavand, error) {
 	var newTreasuries []models.FararavandTreasuries
 
 	resp, err := f.restyClient.R().
@@ -192,7 +193,7 @@ func (f *Fararavand) GetTreasuries() ([]models.FararavandTreasuries, error) {
 }
 
 // GetInvoiceReturns get all revert invoices data from the first ERP
-func (f *Fararavand) GetInvoiceReturns() ([]models.FararavandReverted, error) {
+func (f *Fararavand) GetInvoiceReturns() ([]models.Fararavand, error) {
 	var newReverted []models.FararavandReverted
 
 	resp, err := f.restyClient.R().
