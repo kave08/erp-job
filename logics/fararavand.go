@@ -74,7 +74,7 @@ func (f *Fararavand) GetProducts() ([]models.Fararavand, error) {
 	}
 
 	// get last product id from response --100
-	lastId := newProducts[len(newProducts)-1].ID
+	lastId := newProducts[len(newProducts)-1].Products.ID
 	// get last product id from data --80
 	pId, err := f.repos.Database.GetProduct()
 	if err != nil {
@@ -117,27 +117,22 @@ func (f *Fararavand) GetCustomers() ([]models.Fararavand, error) {
 	}
 
 	// get last customer id from response
-	lastId := newCustomers[len(newCustomers)-1].ID
+	lastId := newCustomers[len(newCustomers)-1].Customers.ID
 	// get last customer id from data
 	cId, err := f.repos.Database.GetCustomer()
 	if err != nil {
 		return nil, err
 	}
-	// if customer id is empty insert in db
-	// if pId == 0 {
-	// 	err = f.repos.Database.InsertCustomer(lastId)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	// fetch new customer id
+
 	if lastId > cId {
 		newCustomers = newCustomers[cId:]
 		//insert new customer id into db
 		res, err := f.aryan.PostSaleFactor(newCustomers)
-		err = f.repos.Database.InsertCustomer(lastId)
-		if err != nil {
-			return nil, err
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertCustomer(lastId)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return newCustomers, err
 	}
@@ -173,7 +168,7 @@ func (f *Fararavand) GetInvoices() ([]models.Fararavand, error) {
 
 // GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) GetTreasuries() ([]models.Fararavand, error) {
-	var newTreasuries []models.FararavandTreasuries
+	var newTreasuries []models.Fararavand
 
 	resp, err := f.restyClient.R().
 		SetResult(newTreasuries).
@@ -194,7 +189,7 @@ func (f *Fararavand) GetTreasuries() ([]models.Fararavand, error) {
 
 // GetInvoiceReturns get all revert invoices data from the first ERP
 func (f *Fararavand) GetInvoiceReturns() ([]models.Fararavand, error) {
-	var newReverted []models.FararavandReverted
+	var newReverted []models.Fararavand
 
 	resp, err := f.restyClient.R().
 		SetResult(newReverted).
