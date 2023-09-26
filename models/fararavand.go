@@ -151,7 +151,7 @@ type Fararavand struct {
 		VisitorCodePosty   int    `json:"visitor_code_posty"`
 		VisitorName        int    `json:"visitor_name"`
 		VisitorTelephone   int    `json:"visitor_telephone"`
-	} `json:'invoice'`
+	} `json:"invoices"`
 	Treasuries struct {
 		CodeDoreh                 int         `json:"codeDoreh"`
 		BranchID                  int         `json:"branchId"`
