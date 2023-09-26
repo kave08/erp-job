@@ -39,7 +39,20 @@ func (a *Aryan) PostSaleFactor(fp []models.Fararavand) (*resty.Response, error) 
 
 	for _, item := range fp {
 		newSaleFactor = append(newSaleFactor, models.SaleFactor{
-			CustomerId: item.Customers.CustomerId,
+			CustomerId:     item.Customers.CustomerId,
+			ServiceGoodsID: item.Products.Codekala,
+			Quantity:       float64(item.Invoices.ProductCount),
+			Fee:            float64(item.Products.ProductFee),
+			VoucherDesc:    "ETL-Form Fararavand",
+			SecondNumber:   strconv.Itoa(item.Invoices.InvoiceId),
+			// VoucherDate:      strconv.Itoa(item.Invoices.InvoiceDate),
+			StockID:          10000006,
+			SaleTypeId:       10000001,
+			DeliveryCenterID: 10000002,
+			SaleCenterID:     10000001,
+			PaymentWayID:     10000001,
+			SellerID:         10000002,
+			SaleManID:        10000001,
 		})
 	}
 
