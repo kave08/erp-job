@@ -64,28 +64,22 @@ func (f *Fararavand) GetBaseData() (*models.Fararavand, error) {
 func (f *Fararavand) GetProducts() ([]models.Fararavand, error) {
 	var newProducts []models.Fararavand
 
-	resp, err := f.restyClient.R().
-		SetResult(newProducts).
-		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, FGetProducts),
-		)
+	resp, err := f.restyClient.R().SetResult(newProducts).Get(
+		fmt.Sprintf("%s/%s", f.baseUrl, FGetProducts),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	// get last product id from response --100
 	lastId := newProducts[len(newProducts)-1].Products.ID
-	// get last product id from data --80
 	pId, err := f.repos.Database.GetProduct()
 	if err != nil {
 		return nil, err
 	}
-	// fetch new product id
+
 	if lastId > pId {
 		newProducts = newProducts[pId:]
-		//insert new product id into db
 		res, err := f.aryan.PostSaleFactor(newProducts)
-
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertProduct(lastId)
 			if err != nil {
@@ -107,18 +101,14 @@ func (f *Fararavand) GetProducts() ([]models.Fararavand, error) {
 func (f *Fararavand) GetCustomers() ([]models.Fararavand, error) {
 	var newCustomers []models.Fararavand
 
-	resp, err := f.restyClient.R().
-		SetResult(newCustomers).
-		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, FGetCustomers),
-		)
+	resp, err := f.restyClient.R().SetResult(newCustomers).Get(
+		fmt.Sprintf("%s/%s", f.baseUrl, FGetCustomers),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	// get last customer id from response
 	lastId := newCustomers[len(newCustomers)-1].Customers.ID
-	// get last customer id from data
 	cId, err := f.repos.Database.GetCustomer()
 	if err != nil {
 		return nil, err
@@ -126,7 +116,6 @@ func (f *Fararavand) GetCustomers() ([]models.Fararavand, error) {
 
 	if lastId > cId {
 		newCustomers = newCustomers[cId:]
-		//insert new customer id into db
 		res, err := f.aryan.PostSaleFactor(newCustomers)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertCustomer(lastId)
@@ -149,13 +138,29 @@ func (f *Fararavand) GetCustomers() ([]models.Fararavand, error) {
 func (f *Fararavand) GetInvoices() ([]models.Fararavand, error) {
 	var newInvoices []models.Fararavand
 
-	resp, err := f.restyClient.R().
-		SetResult(newInvoices).
-		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, FGetInvoices),
-		)
+	resp, err := f.restyClient.R().SetResult(newInvoices).Get(
+		fmt.Sprintf("%s/%s", f.baseUrl, FGetInvoices),
+	)
 	if err != nil {
 		return nil, err
+	}
+
+	lastId := newInvoices[len(newInvoices)-1].Invoices.InvoiceId
+	iId, err := f.repos.Database.GetInvoice()
+	if err != nil {
+		return nil, err
+	}
+
+	if lastId > iId {
+		newInvoices = newInvoices[iId:]
+		res, err := f.aryan.PostSaleFactor(newInvoices)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertInvoice(lastId)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return newInvoices, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
@@ -170,11 +175,9 @@ func (f *Fararavand) GetInvoices() ([]models.Fararavand, error) {
 func (f *Fararavand) GetTreasuries() ([]models.Fararavand, error) {
 	var newTreasuries []models.Fararavand
 
-	resp, err := f.restyClient.R().
-		SetResult(newTreasuries).
-		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, FGetTreasuries),
-		)
+	resp, err := f.restyClient.R().SetResult(newTreasuries).Get(
+		fmt.Sprintf("%s/%s", f.baseUrl, FGetTreasuries),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -191,11 +194,9 @@ func (f *Fararavand) GetTreasuries() ([]models.Fararavand, error) {
 func (f *Fararavand) GetInvoiceReturns() ([]models.Fararavand, error) {
 	var newReverted []models.Fararavand
 
-	resp, err := f.restyClient.R().
-		SetResult(newReverted).
-		Get(
-			fmt.Sprintf("%s/%s", f.baseUrl, FGetInvoiceReturns),
-		)
+	resp, err := f.restyClient.R().SetResult(newReverted).Get(
+		fmt.Sprintf("%s/%s", f.baseUrl, FGetInvoiceReturns),
+	)
 	if err != nil {
 		return nil, err
 	}
