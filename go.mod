@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/robfig/cron v1.2.0
 	github.com/spf13/cobra v1.6.1
