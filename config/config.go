@@ -12,27 +12,27 @@ import (
 var Cfg config
 
 type config struct {
-	BaseURL string `yaml:"BASE_URL"`
-	ApiKey  string `yaml:"API_KEY"`
-	SqLite  SqLite `yaml:"SQLITE"`
+	BaseURL  string   `yaml:"BASE_URL"`
+	ApiKey   string   `yaml:"API_KEY"`
+	Database Database `yaml:"Database"`
 }
 
 type Server struct {
 	Port string `yaml:"port"`
 }
 
-type SqLite struct {
-	Username           string `yml:"Username"`
-	Password           string `yml:"Password"`
-	Host               string `yml:"Host"`
-	Port               string `yml:"Port"`
-	DBName             string `yml:"DB_Name"`
-	MaxOpenConnections int    `yml:"Max_Open_Connections"`
-	MaxIdleConnections int    `yml:"Max_Idle_Connections"`
+type Database struct {
+	Username           string `yaml:"USERNAME"`
+	Password           string `yaml:"PASSWORD"`
+	Port               string `yaml:"PORT"`
+	Host               string `yaml:"HOST"`
+	DBName             string `yaml:"DB_NAME"`
+	MaxOpenConnections int    `yaml:"MAX_OPEN_CONNECTIONS"`
+	MaxIdleConnections int    `yaml:"MAX_IDLE_CONNECTIONS"`
 }
 
 type SetupResult struct {
-	SqlitConnection *sql.DB
+	MysqlConnection *sql.DB
 }
 
 func LoadConfig(configPath string) *SetupResult {
@@ -60,12 +60,12 @@ func LoadConfig(configPath string) *SetupResult {
 
 	fmt.Printf("%v", Cfg)
 
-	sdb, err := initializeSQLite()
+	mdb, err := initializeMySQL(Cfg.Database)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("error at connecting to mysql database. err: %v, connection info: %+v", err, Cfg.Database))
 	}
 
 	return &SetupResult{
-		SqlitConnection: sdb,
+		MysqlConnection: mdb,
 	}
 }
