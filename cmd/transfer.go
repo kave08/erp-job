@@ -19,9 +19,9 @@ var transferCmd = &cobra.Command{
 }
 
 func transfer() {
-	dbs := config.LoadConfig(configPath)
+	mdb := config.LoadConfig(configPath)
 
-	repos := repository.NewRepository(dbs.SqlitConnection)
+	repos := repository.NewRepository(mdb.MysqlConnection)
 
 	ar := logics.NewAryan(repos)
 	fr := logics.NewFararavand(repos, ar)
