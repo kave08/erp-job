@@ -24,11 +24,11 @@ type Aryan struct {
 
 func NewAryan(repos *repository.Repository) AryanInterface {
 	c := resty.New().
-		SetHeader("ApiKey", config.Cfg.ApiKey)
+		SetHeader("ApiKey", config.Cfg.AryanApp.APIKey).SetBaseURL(config.Cfg.AryanApp.BaseURL)
 
 	return &Aryan{
 		restyClient: c,
-		baseUrl:     config.Cfg.BaseURL,
+		baseUrl:     config.Cfg.AryanApp.BaseURL,
 		repos:       repos,
 	}
 }

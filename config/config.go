@@ -12,13 +12,19 @@ import (
 var Cfg config
 
 type config struct {
-	BaseURL  string   `yaml:"BASE_URL"`
-	ApiKey   string   `yaml:"API_KEY"`
-	Database Database `yaml:"Database"`
+	AryanApp      AryanApp      `yaml:"AryanApp"`
+	Database      Database      `yaml:"Database"`
+	FararavandApp FararavandApp `yaml:"FararavandApp"`
 }
-
-type Server struct {
-	Port string `yaml:"port"`
+type AryanApp struct {
+	BaseURL string `yaml:"BASE_URL"`
+	APIKey  string `yaml:"API_KEY"`
+}
+type FararavandApp struct {
+	BaseURL  string `yaml:"BASE_URL"`
+	APIKey   string `yaml:"API_KEY"`
+	UserName string `yaml:"Api"`
+	Pass     string `yaml:"123"`
 }
 
 type Database struct {
@@ -32,11 +38,11 @@ type Database struct {
 }
 
 type SetupResult struct {
+	AryanApp        AryanApp
 	MysqlConnection *sql.DB
 }
 
 func LoadConfig(configPath string) *SetupResult {
-
 	viper.SetEnvPrefix("erp-job")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
@@ -66,6 +72,7 @@ func LoadConfig(configPath string) *SetupResult {
 	}
 
 	return &SetupResult{
+		AryanApp:        Cfg.AryanApp,
 		MysqlConnection: mdb,
 	}
 }

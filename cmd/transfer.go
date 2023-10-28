@@ -19,12 +19,18 @@ var transferCmd = &cobra.Command{
 }
 
 func transfer() {
+	fmt.Println("step 0", configPath)
+
 	mdb := config.LoadConfig(configPath)
 
+	// fmt.Println("step 0", config.Cfg.BaseURL)
 	repos := repository.NewRepository(mdb.MysqlConnection)
+	// fmt.Println("step 1 -----", repos)
 
 	ar := logics.NewAryan(repos)
+	// fmt.Println("step 2 -----", ar)
 	fr := logics.NewFararavand(repos, ar)
+	// fmt.Println("step 3 -----", repos, ar)
 
 	_, err := fr.GetBaseData()
 	if err != nil {

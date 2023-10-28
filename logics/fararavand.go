@@ -29,11 +29,11 @@ type Fararavand struct {
 
 func NewFararavand(repos *repository.Repository, aryan AryanInterface) FararavandInterface {
 	c := resty.New().
-		SetHeader("ApiKey", config.Cfg.ApiKey)
+		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
 	return &Fararavand{
 		restyClient: c,
-		baseUrl:     config.Cfg.BaseURL,
+		baseUrl:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
 		aryan:       aryan,
 	}
