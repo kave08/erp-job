@@ -12,9 +12,9 @@ import (
 var Cfg config
 
 type config struct {
-	AryanApp      AryanApp      `yaml:"AryanApp"`
-	Database      Database      `yaml:"Database"`
-	FararavandApp FararavandApp `yaml:"FararavandApp"`
+	AryanApp      AryanApp      `yaml:"aryan_app"`
+	Database      Database      `yaml:"database"`
+	FararavandApp FararavandApp `yaml:"fararavand_app"`
 }
 type AryanApp struct {
 	BaseURL string `yaml:"BASE_URL"`
@@ -23,8 +23,8 @@ type AryanApp struct {
 type FararavandApp struct {
 	BaseURL  string `yaml:"BASE_URL"`
 	APIKey   string `yaml:"API_KEY"`
-	UserName string `yaml:"Api"`
-	Pass     string `yaml:"123"`
+	UserName string `yaml:"api"`
+	Pass     string `yaml:"Pass"`
 }
 
 type Database struct {
