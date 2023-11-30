@@ -12,19 +12,20 @@ import (
 var Cfg config
 
 type config struct {
-	AryanApp      AryanApp      `yaml:"aryan_app"`
-	Database      Database      `yaml:"database"`
-	FararavandApp FararavandApp `yaml:"fararavand_app"`
+	AryanApp      AryanApp      `yaml:"ARYAN_APP"`
+	FararavandApp FararavandApp `yaml:"FARARAVAND_APP"`
+	Database      Database      `yaml:"DATABASE"`
 }
 type AryanApp struct {
 	BaseURL string `yaml:"BASE_URL"`
 	APIKey  string `yaml:"API_KEY"`
+	// TODO: add other fields
 }
 type FararavandApp struct {
 	BaseURL  string `yaml:"BASE_URL"`
 	APIKey   string `yaml:"API_KEY"`
-	UserName string `yaml:"api"`
-	Pass     string `yaml:"Pass"`
+	UserName string `yaml:"USER_NAME"`
+	Pass     string `yaml:"PASSWORD"`
 }
 
 type Database struct {
@@ -57,7 +58,7 @@ func LoadConfig(configPath string) *SetupResult {
 	}
 
 	err = viper.Unmarshal(&Cfg, func(config *mapstructure.DecoderConfig) {
-		config.TagName = "yml"
+		config.TagName = "yaml"
 	})
 	if err != nil {
 		fmt.Println("Error in unmarshaling config")

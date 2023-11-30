@@ -19,47 +19,42 @@ var transferCmd = &cobra.Command{
 }
 
 func transfer() {
-	fmt.Println("step 0", configPath)
 
 	mdb := config.LoadConfig(configPath)
 
-	// fmt.Println("step 0", config.Cfg.BaseURL)
 	repos := repository.NewRepository(mdb.MysqlConnection)
-	// fmt.Println("step 1 -----", repos)
 
 	ar := logics.NewAryan(repos)
-	// fmt.Println("step 2 -----", ar)
 	fr := logics.NewFararavand(repos, ar)
-	// fmt.Println("step 3 -----", repos, ar)
 
 	_, err := fr.GetBaseData()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("1. err", err.Error())
 		return
 	}
 	_, err = fr.GetProducts()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("2. err", err.Error())
 		return
 	}
 	_, err = fr.GetCustomers()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("3. err", err.Error())
 		return
 	}
 	_, err = fr.GetInvoices()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("4. err", err.Error())
 		return
 	}
 	_, err = fr.GetTreasuries()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("5. err", err.Error())
 		return
 	}
 	_, err = fr.GetInvoiceReturns()
 	if err != nil {
-		fmt.Println("err", err.Error())
+		fmt.Println("6. err", err.Error())
 	}
 }
 
