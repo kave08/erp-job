@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type Fararavand struct {
 	BaseData   BaseData
 	Customers  Customers
@@ -134,35 +136,46 @@ type Products struct {
 }
 
 type Invoices struct {
-	BranchID           int    `json:"branch_id"`
-	CodeDoreh          int    `json:"code_doreh"`
-	InvoiceId          int    `json:"invoice_id"`
-	InvoiceDate        string `json:"invoice_date"`
-	InvoiceNumber      int    `json:"invoice_number"`
-	CustomerID         int    `json:"customer_id"`
-	PaymentTypeID      int    `json:"payment_type_id"`
-	ModatCheck         int    `json:"modat_check"`
-	InvoicePriceKhales int    `json:"invoice_price_khales"`
-	SumJayezeh         int    `json:"sum_jayezeh"`
-	SumMalyat          int    `json:"sum_malyat"`
-	SumAvarez          int    `json:"sum_avarez"`
-	InvoicePrice       int    `json:"invoice_price"`
-	Date               string `json:"date"`
-	WareHouseID        int    `json:"ware_houseId"`
-	ProductID          int    `json:"product_id"`
-	ProductCount       int    `json:"product_count"`
-	ProductFee         int    `json:"product_fee"`
-	ProductPrice       int    `json:"product_price"`
-	DiscountPercentage int    `json:"discount_percentage"`
-	ProductDiscount    int    `json:"product_discount"`
-	IsJayezeh          int    `json:"is_jayezeh"`
-	VisitorAddress     int    `json:"visitor_address"`
-	VisitorCode        int    `json:"visitor_code"`
-	VisitorCodeMely    int    `json:"visitor_code_mely"`
-	VisitorCodePosty   int    `json:"visitor_code_posty"`
-	VisitorName        int    `json:"visitor_name"`
-	VisitorTelephone   int    `json:"visitor_telephone"`
-	CustomerCodePosti  int    `json:"customer_code_posti"`
+	BranchID                  int       `json:"branch_id"`
+	CodeDoreh                 int       `json:"code_doreh"`
+	InvoiceId                 int       `json:"invoice_id"`
+	InvoiceDate               string    `json:"invoice_date"`
+	InvoiceNumber             int       `json:"invoice_number"`
+	CustomerID                int       `json:"customer_id"`
+	PaymentTypeID             int       `json:"payment_type_id"`
+	ModatCheck                int       `json:"modat_check"`
+	InvoicePriceKhales        int       `json:"invoice_price_khales"`
+	SumJayezeh                int       `json:"sum_jayezeh"`
+	SumMalyat                 int       `json:"sum_malyat"`
+	SumAvarez                 int       `json:"sum_avarez"`
+	InvoicePrice              int       `json:"invoice_price"`
+	Date                      time.Time `json:"date"`
+	WareHouseID               int       `json:"ware_houseId"`
+	ProductID                 int       `json:"product_id"`
+	ProductCount              int       `json:"product_count"`
+	ProductFee                int       `json:"product_fee"`
+	ProductPrice              int       `json:"product_price"`
+	DiscountPercentage        int       `json:"discount_percentage"`
+	ProductDiscount           int       `json:"product_discount"`
+	IsJayezeh                 int       `json:"is_jayezeh"`
+	VisitorName               int       `json:"visitor_name"`
+	VisitorAddress            int       `json:"visitor_address"`
+	VisitorTelephone          int       `json:"visitor_telephone"`
+	VisitorCodeMely           int       `json:"visitor_code_mely"`
+	VisitorCodePosty          int       `json:"visitor_code_posty"`
+	VisitorCode               int       `json:"visitor_code"`
+	CustomerName              string    `json:"customer_name"`
+	CustomerAddress           string    `json:"customer_address"`
+	ShenasehMeli              string
+	ShomarehSabt              string
+	CustomerCodePosti         int `json:"customer_code_posti"`
+	CustomerCodeMeli          string
+	Codekala                  int
+	BarCode                   string
+	NameKalaFaktor            string
+	ProductPriceAfterDiscount int
+	MaliatAvarez              int
+	ProductPriceNet           int
 }
 
 type Treasuries struct {
