@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// TODO: invoice
 type SaleOrder struct {
 	CustomerId       int           `json:"customer_id"`
 	VoucherDate      time.Duration `json:"voucher_date"`
@@ -18,6 +19,8 @@ type SaleOrder struct {
 	Fee              float64       `json:"fee"`
 	DetailDesc       string        `json:"detail_desc"`
 }
+
+// TODO: done
 type SaleCustomer struct {
 	CustomerID   int    `json:"customer_id"`
 	CustomerCode string `json:"customer_code"`
@@ -53,6 +56,8 @@ type SaleSellerVisitor struct {
 	CentersID   int    `json:"centers_id"`
 	CentersCode string `json:"centers_code"`
 }
+
+// TODO: done!
 type Goods struct {
 	ServiceGoodsID   int    `json:"service_goods_id"`
 	ServiceGoodsCode string `json:"service_goods_code"`
@@ -64,6 +69,8 @@ type Goods struct {
 	Level2           int    `json:"level2"`
 	Level3           int    `json:"level3"`
 }
+
+// TODO: unknown!
 type SaleProforma struct {
 	CustomerId       int           `json:"customer_id"`
 	VoucherDate      time.Duration `json:"voucher_date"`
@@ -80,22 +87,24 @@ type SaleProforma struct {
 	Fee              float64       `json:"fee"`
 	DetailDesc       string        `json:"detail_desc"`
 }
+
+// TODO: done
 type SaleFactor struct {
-	CustomerId       int           `json:"customer_id"`
-	VoucherDate      time.Duration `json:"voucher_date"`
-	SecondNumber     string        `json:"second_number"`
-	VoucherDesc      string        `json:"voucher_desc"`
-	StockID          int           `json:"stock_id"`
-	SaleTypeId       int           `json:"sale_type_id"`
-	DeliveryCenterID int           `json:"delivery_center_id"`
-	SaleCenterID     int           `json:"sale_center_id"`
-	PaymentWayID     int           `json:"payment_way_id"`
-	SellerID         int           `json:"seller_id"`
-	SaleManID        int           `json:"sale_man_id"`
-	DistributerId    int           `json:"distributer_id"`
-	ServiceGoodsID   int           `json:"service_goods_id"`
-	Quantity         float64       `json:"quantity"`
-	Fee              float64       `json:"fee"`
-	DetailDesc       string        `json:"detail_desc"`
-	Element          float64       `json:"element"`
+	CustomerId       int     `json:"customer_id"`
+	VoucherDate      string  `json:"voucher_date"`
+	SecondNumber     string  `json:"second_number"`
+	VoucherDesc      string  `json:"voucher_desc"`
+	StockID          int     `json:"stock_id"`
+	SaleTypeId       int     `json:"sale_type_id"`
+	DeliveryCenterID int     `json:"delivery_center_id"`
+	SaleCenterID     int     `json:"sale_center_id"`
+	PaymentWayID     int     `json:"payment_way_id"`
+	SellerID         int     `json:"seller_id"`
+	SaleManID        int     `json:"sale_man_id"`
+	DistributerId    int     `json:"distributer_id"`
+	ServiceGoodsID   int     `json:"service_goods_id"`
+	Quantity         float64 `json:"quantity"`
+	Fee              float64 `json:"fee"`
+	DetailDesc       string  `json:"detail_desc"`
+	Element          float64 `json:"element"`
 }
