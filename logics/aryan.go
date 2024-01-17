@@ -121,26 +121,137 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Respon
 	return res, nil
 }
 
-// PostSaleCustomer Post all sale customer data to the secound ERP
-func (a *Aryan) PostSaleCustomer(f models.Fararavand) (*resty.Response, error) {
-	// var newSaleCustomer []models.SaleCustomer
+func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error) {
+	var newSaleOrder []models.SaleOrder
 
-	// for _, item := range fp {
-	// 	newSaleCustomer = append(newSaleCustomer, models.SaleCustomer{
-	// 		CustomerID:   item.Customers.CustomerId,
-	// 		CustomerCode: strconv.Itoa(item.Customers.CustomerCodePosti),
-	// 	})
-	// }
+	for _, item := range fp {
+		newSaleOrder = append(newSaleOrder, models.SaleOrder{
+			CustomerId:       item.CustomerID,
+			VoucherDate:      "",
+			SecondNumber:     0,
+			VoucherDesc:      "",
+			StockID:          item.WareHouseID,
+			SaleTypeId:       0,
+			DeliveryCenterID: 0,
+			SaleCenterID:     0,
+			PaymentWayID:     0,
+			SellerVisitorID:  item.VisitorCode,
+			ServiceGoodsID:   item.Codekala,
+			Quantity:         float64(item.ProductCount),
+			Fee:              float64(item.ProductFee),
+			DetailDesc:       "",
+		})
+	}
 
-	// res, err := a.restyClient.R().SetBody(newSaleCustomer).Post("asdasdasdasd")
-	// if err != nil {
-	// 	return nil, err
-	// }
+	res, err := a.restyClient.R().SetBody(newSaleOrder).Post("asdasdasdasd")
+	if err != nil {
+		return nil, err
+	}
 
-	// if res.StatusCode() != http.StatusOK {
-	// 	fmt.Println(res.Body())
-	// }
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
 
-	return nil, nil
-	// return res, nil
+	return res, nil
+}
+
+func (a *Aryan) PostProductsToSaleCenter(fp []models.Products) (*resty.Response, error) {
+	var newSaleCenter []models.SaleCenter4SaleSelect
+
+	for _, item := range fp {
+		newSaleCenter = append(newSaleCenter, models.SaleCenter4SaleSelect{
+			StockID:   item.ProductId,
+			StockCode: strconv.Itoa(item.Codekala),
+			StockDesc: item.Name,
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSaleCenter).Post("asdasdasdasd")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}
+
+func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error) {
+	var newSalePaymentSelect []models.SalePaymentSelect
+
+	for _, item := range fp {
+		newSalePaymentSelect = append(newSalePaymentSelect, models.SalePaymentSelect{
+			PaymentWayID:   item.PaymentTypeID,
+			PaymentwayDesc: "",
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSalePaymentSelect).Post("asdasdasdasd")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}
+
+func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error) {
+	var newSalerSelect []models.SalerSelect
+
+	for _, item := range fp {
+		newSalerSelect = append(newSalerSelect, models.SalerSelect{
+			SaleVisitorID:   item.VisitorCode,
+			SaleVisitorDesc: item.VisitorName,
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSalerSelect).Post("asdasdasdasd")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}
+
+func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error) {
+	var newSaleProforma []models.SaleProforma
+
+	for _, item := range fp {
+		newSaleProforma = append(newSaleProforma, models.SaleProforma{
+			CustomerId:       item.CustomerID,
+			VoucherDate:      0,
+			SecondNumber:     "",
+			VoucherDesc:      "",
+			StockID:          item.WareHouseID,
+			SaleTypeId:       0,
+			DeliveryCenterID: 0,
+			SaleCenterID:     0,
+			PaymentWayID:     0,
+			SellerVisitorID:  item.VisitorCode,
+			ServiceGoodsID:   item.ProductID,
+			Quantity:         float64(item.ProductCount),
+			Fee:              float64(item.ProductFee),
+			DetailDesc:       "",
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSaleProforma).Post("asdasdasdasd")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
 }
