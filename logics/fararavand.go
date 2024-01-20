@@ -68,7 +68,7 @@ func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
 	}
 
 	lastId := newCustomers[len(newCustomers)-1].ID
-	cId, err := f.repos.Database.GetCustomer()
+	cId, err := f.repos.Database.GetCustomerToSaleCustomer()
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
 		newCustomers = newCustomers[cId:]
 		res, err := f.aryan.PostCustomerToSaleCustomer(newCustomers)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertCustomer(lastId)
+			err = f.repos.Database.InsertCustomerToSaleCustomer(lastId)
 			if err != nil {
 				return nil, err
 			}
@@ -103,16 +103,16 @@ func (f *Fararavand) GetProducts() ([]models.Products, error) {
 	}
 
 	lastId := newProducts[len(newProducts)-1].ID
-	pId, err := f.repos.Database.GetProduct()
+	pId, err := f.repos.Database.GetProductsToGoods()
 	if err != nil {
 		return nil, err
 	}
 
 	if lastId > pId {
 		newProducts = newProducts[pId:]
-		res, err := f.aryan.PostProductsToSaleCenter(newProducts)
+		res, err := f.aryan.PostProductsToGoods(newProducts)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertProduct(lastId)
+			err = f.repos.Database.InsertProductsToGoods(lastId)
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +138,7 @@ func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
 	}
 
 	lastId := newInvoices[len(newInvoices)-1].InvoiceId
-	iId, err := f.repos.Database.GetCustomer()()
+	iId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
 		newInvoices = newInvoices[iId:]
 		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoice(lastId)
+			err = f.repos.Database.InsertInvoiceToSaleFactor(lastId)
 			if err != nil {
 				return nil, err
 			}
