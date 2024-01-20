@@ -12,12 +12,12 @@ import (
 )
 
 type FararavandInterface interface {
+	GetBaseData() (*models.Fararavand, error)
 	GetInvoices() ([]models.Invoices, error)
-	// GetBaseData() (*models.Fararavand, error)
-	// GetProducts() ([]models.Products, error)
-	// GetCustomers() ([]models.Fararavand, error)
-	// GetTreasuries() ([]models.Fararavand, error)
-	// GetInvoiceReturns() ([]models.Fararavand, error)
+	GetProducts() ([]models.Products, error)
+	GetCustomers() ([]models.Customers, error)
+	GetTreasuries() ([]models.Fararavand, error)
+	GetInvoiceReturns() ([]models.Fararavand, error)
 }
 
 type Fararavand struct {
@@ -39,31 +39,15 @@ func NewFararavand(repos *repository.Repository, aryan AryanInterface) Fararavan
 	}
 }
 
-// GetInvoices get all invoices' data from the first ERP
-func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
-	var newInvoices []models.Invoices
+// GetBaseData gets all base information from the first ERP
+func (f *Fararavand) GetBaseData() (*models.Fararavand, error) {
+	var newData = new(models.Fararavand)
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(FGetInvoices)
+	resp, err := f.restyClient.R().
+		SetResult(newData).
+		Get(FGetBaseData)
 	if err != nil {
 		return nil, err
-	}
-
-	lastId := newInvoices[len(newInvoices)-1].InvoiceId
-	iId, err := f.repos.Database.GetInvoice()
-	if err != nil {
-		return nil, err
-	}
-
-	if lastId > iId {
-		newInvoices = newInvoices[iId:]
-		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoice(lastId)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return newInvoices, err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
@@ -71,61 +55,7 @@ func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
 		return nil, fmt.Errorf(ErrNotOk)
 	}
 
-	return newInvoices, nil
-}
-
-// // GetBaseData gets all base information from the first ERP
-// func (f *Fararavand) GetBaseData() (*models.Fararavand, error) {
-// 	var newData = new(models.Fararavand)
-
-// 	resp, err := f.restyClient.R().
-// 		SetResult(newData).
-// 		Get(FGetBaseData)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	if resp.StatusCode() != http.StatusOK {
-// 		log.Printf("status code: %d", resp.StatusCode())
-// 		return nil, fmt.Errorf(ErrNotOk)
-// 	}
-
-// 	return newData, nil
-// }
-
-// GetProducts gets all products data from the first ERP
-func (f *Fararavand) GetProducts() ([]models.Products, error) {
-	var newProducts []models.Products
-
-	resp, err := f.restyClient.R().SetResult(&newProducts).Get(FGetProducts)
-	if err != nil {
-		return nil, err
-	}
-
-	lastId := newProducts[len(newProducts)-1].ID
-	pId, err := f.repos.Database.GetProduct()
-	if err != nil {
-		return nil, err
-	}
-
-	if lastId > pId {
-		newProducts = newProducts[pId:]
-		res, err := f.aryan.PostInoviceToSaleFactor(newProducts)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertProduct(lastId)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return newProducts, err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return nil, fmt.Errorf(ErrNotOk)
-	}
-
-	return newProducts, nil
+	return newData, nil
 }
 
 // GetCustomers get all customers' data from the first ERP
@@ -161,6 +91,76 @@ func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
 	}
 
 	return newCustomers, nil
+}
+
+// GetProducts gets all products data from the first ERP
+func (f *Fararavand) GetProducts() ([]models.Products, error) {
+	var newProducts []models.Products
+
+	resp, err := f.restyClient.R().SetResult(&newProducts).Get(FGetProducts)
+	if err != nil {
+		return nil, err
+	}
+
+	lastId := newProducts[len(newProducts)-1].ID
+	pId, err := f.repos.Database.GetProduct()
+	if err != nil {
+		return nil, err
+	}
+
+	if lastId > pId {
+		newProducts = newProducts[pId:]
+		res, err := f.aryan.PostProductsToSaleCenter(newProducts)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertProduct(lastId)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return newProducts, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf(ErrNotOk)
+	}
+
+	return newProducts, nil
+}
+
+// GetInvoices get all invoices' data from the first ERP
+func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
+	var newInvoices []models.Invoices
+
+	resp, err := f.restyClient.R().SetResult(newInvoices).Get(FGetInvoices)
+	if err != nil {
+		return nil, err
+	}
+
+	lastId := newInvoices[len(newInvoices)-1].InvoiceId
+	iId, err := f.repos.Database.GetCustomer()()
+	if err != nil {
+		return nil, err
+	}
+
+	if lastId > iId {
+		newInvoices = newInvoices[iId:]
+		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertInvoice(lastId)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return newInvoices, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf(ErrNotOk)
+	}
+
+	return newInvoices, nil
 }
 
 // GetTreasuries get all treasuries data from the first ERP
