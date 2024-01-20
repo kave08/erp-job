@@ -14,15 +14,27 @@ const (
 	InsertCustomerMaxIdQuery = "INSERT INTO customers (c_id, created_at) VALUES(?, ?);"
 	GetCustomerMaxIdQuery    = "SELECT Max(c_id) FROM customers;"
 
-	//TODO: invoice id is unique?
-	InsertInvoiceMaxIdQuery = "INSERT INTO invoices (i_id, created_at) VALUES(?, ?);"
-	GetInvoiceMaxIdQuery    = "SELECT Max(i_id) FROM invoices;"
+	InsertInvoiceToSaleFactorMaxIdQuery = "INSERT INTO invoice_to_sale_factor (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSaleFactorMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_factor;"
 
-	//TODO: invoice id is unique?
+	InsertInvoiceToGoodsMaxIdQuery = "INSERT INTO invoice_to_goods (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToGoodsMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_goods;"
+
+	InsertInvoiceToSaleOrderMaxIdQuery = "INSERT INTO invoice_to_sale_order (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSaleOrderMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_order;"
+
+	InsertInvoiceToSalePaymentMaxIdQuery = "INSERT INTO invoice_to_sale_payment (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSalePaymentMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_payment;"
+
+	InsertInvoiceToSalerSelectMaxIdQuery = "INSERT INTO invoice_to_saler_select (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSalerSelectMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_saler_select;"
+
+	InsertInvoiceToSaleProformaMaxIdQuery = "INSERT INTO invoice_to_sale_proforma (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSaleProformaMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_proforma;"
+
 	InsertTreasuriesMaxIdQuery = "INSERT INTO treasuries (t_id, created_at) VALUES(?, ?);"
 	GetTreasuriesMaxIdQuery    = "SELECT Max(t_id) FROM treasuries;"
 
-	//TODO: invoice id is unique?
 	InsertRevertedMaxIdQuery = "INSERT INTO reverted (r_id, created_at) VALUES(?, ?);"
 	GetRevertedMaxIdQuery    = "SELECT Max(r_id) FROM reverted;"
 )
@@ -34,8 +46,23 @@ type DatabaseInterface interface {
 	InsertCustomer(c_id int) error
 	GetCustomer() (int, error)
 
-	InsertInvoice(i_id int) error
-	GetInvoice() (int, error)
+	InsertInvoiceToSaleFactor(i_id int) error
+	GetInvoiceToSaleFactor() (int, error)
+
+	InsertInvoiceToGoods(i_id int) error
+	GetInvoiceToGoods() (int, error)
+
+	InsertInvoiceToSaleOrder(i_id int) error
+	GetInvoiceToSaleOrder() (int, error)
+
+	InsertInvoiceToSalePayment(i_id int) error
+	GetInvoiceToSalePayment() (int, error)
+
+	InsertInvoiceToSalerSelect(i_id int) error
+	GetInvoiceToSalerSelect() (int, error)
+
+	InsertInvoiceToSaleProforma(i_id int) error
+	GetInvoiceToSaleProforma() (int, error)
 
 	InsertTreasuries(t_id int) error
 	GetTreasuries() (int, error)
@@ -65,15 +92,79 @@ func (d *Database) GetCustomer() (int, error) {
 	return maxId, err
 }
 
-// GetInvoice implements DatabaseInterface
-func (d *Database) GetInvoice() (i_id int, err error) {
+func (d *Database) InsertInvoiceToSaleFactor(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSaleFactorMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Database) GetInvoiceToSaleFactor() (int, error) {
 	var maxId int
-	err = d.sdb.QueryRow(GetInvoiceMaxIdQuery).Scan(&maxId)
+	err := d.sdb.QueryRow(GetInvoiceToSaleFactorMaxIdQuery).Scan(&maxId)
 	if err != nil {
 		return 0, err
 	}
 
 	return maxId, err
+}
+
+func (d *Database) InsertInvoiceToGoods(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToGoodsMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Database) GetInvoiceToGoods() (int, error) {
+	var maxId int
+	err := d.sdb.QueryRow(GetInvoiceToGoodsMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxId, err
+}
+
+func (d *Database) InsertInvoiceToSaleOrder(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSaleOrderMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *Database) GetInvoiceToSaleOrder() (int, error) {
+	return 0, nil
+}
+
+func (d *Database) InsertInvoiceToSalePayment(i_id int) error {
+	return nil
+}
+
+func (d *Database) GetInvoiceToSalePayment() (int, error) {
+	return 0, nil
+}
+
+func (d *Database) InsertInvoiceToSalerSelect(i_id int) error {
+	return nil
+}
+
+func (d *Database) GetInvoiceToSalerSelect() (int, error) {
+	return 0, nil
+}
+
+func (d *Database) InsertInvoiceToSaleProforma(i_id int) error {
+	return nil
+}
+
+func (d *Database) GetInvoiceToSaleProforma() (int, error) {
+	return 0, nil
 }
 
 // GetProduct implements DatabaseInterface
@@ -112,16 +203,6 @@ func (d *Database) GetTreasuries() (int, error) {
 // InsertCustomer implements DatabaseInterface
 func (d *Database) InsertCustomer(c_id int) error {
 	_, err := d.sdb.Exec(InsertCustomerMaxIdQuery, c_id, time.Now())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// InsertInvoice implements DatabaseInterface
-func (d *Database) InsertInvoice(i_id int) error {
-	_, err := d.sdb.Exec(InsertInvoiceMaxIdQuery, i_id)
 	if err != nil {
 		return err
 	}
