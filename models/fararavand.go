@@ -156,6 +156,13 @@ type Invoices struct {
 	ProductPriceAfterDiscount int       `json:"productPriceAfterDiscount"`
 	MaliatAvarez              int       `json:"malyatAvarez"`
 	ProductPriceNet           int       `json:"productPriceNet"`
+	SNoePardakht              int       `json:"sNoePardakht"`
+	CCForoshandeh             int       `json:"CCForoshandeh"`
+	CodeForoshandeh           int       `json:"codeForoshandeh"`
+	CodeMahal                 int       `json:"codeMahal"`
+	TozihatFaktor             string    `json:"tozihatFaktor"`
+	NameAnbar                 string    `json:"nameAnbar"`
+	TxtNoePardakht            string    `json:"txtNoePardakht"`
 }
 
 type Treasuries struct {
