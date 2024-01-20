@@ -77,20 +77,20 @@ type Goods struct {
 
 // TODO: unknown!
 type SaleProforma struct {
-	CustomerId       int           `json:"customer_id"`
-	VoucherDate      time.Duration `json:"voucher_date"`  // ""
-	SecondNumber     string        `json:"second_number"` //""
-	VoucherDesc      string        `json:"voucher_desc"`  //
-	StockID          int           `json:"stock_id"`
-	SaleTypeId       int           `json:"sale_type_id"`
-	DeliveryCenterID int           `json:"delivery_center_id"` //TODO: added by mohamad
-	SaleCenterID     int           `json:"sale_center_id"`     // ""
-	PaymentWayID     int           `json:"payment_way_id"`     //""
-	SellerVisitorID  int           `json:"seller_visitor_id"`  // invoice.VisitorCode
-	ServiceGoodsID   int           `json:"service_goods_id"`   //ProductID
-	Quantity         float64       `json:"quantity"`           //ProductCount
-	Fee              float64       `json:"fee"`                //ProductFee
-	DetailDesc       string        `json:"detail_desc"`
+	CustomerId       int       `json:"customer_id"`
+	VoucherDate      time.Time `json:"voucher_date"`  // ""
+	SecondNumber     string    `json:"second_number"` //""
+	VoucherDesc      string    `json:"voucher_desc"`  //
+	StockID          int       `json:"stock_id"`
+	SaleTypeId       int       `json:"sale_type_id"`
+	DeliveryCenterID int       `json:"delivery_center_id"` //TODO: added by mohamad
+	SaleCenterID     int       `json:"sale_center_id"`     // ""
+	PaymentWayID     int       `json:"payment_way_id"`     //""
+	SellerVisitorID  int       `json:"seller_visitor_id"`  // invoice.VisitorCode
+	ServiceGoodsID   int       `json:"service_goods_id"`   //ProductID
+	Quantity         float64   `json:"quantity"`           //ProductCount
+	Fee              float64   `json:"fee"`                //ProductFee
+	DetailDesc       string    `json:"detail_desc"`
 }
 
 type SaleFactor struct {
