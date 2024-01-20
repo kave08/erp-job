@@ -8,11 +8,11 @@ import (
 const (
 	//TODO: basedata and details
 
-	InsertProductMaxIdQuery = "INSERT INTO products (p_id, created_at) VALUES(?, ?);"
-	GetProductMaxIdQuery    = "SELECT Max(p_id) FROM products;"
+	InsertProductsToGoodsMaxIdQuery = "INSERT INTO products_to_goods (p_id, created_at) VALUES(?, ?);"
+	GetProductsToGoodsMaxIdQuery    = "SELECT Max(p_id) FROM products_to_goods;"
 
-	InsertCustomerMaxIdQuery = "INSERT INTO customers (c_id, created_at) VALUES(?, ?);"
-	GetCustomerMaxIdQuery    = "SELECT Max(c_id) FROM customers;"
+	InsertCustomerToSaleCustomerMaxIdQuery = "INSERT INTO customer_to_sale_customer (c_id, created_at) VALUES(?, ?);"
+	GetCustomerToSaleCustomerMaxIdQuery    = "SELECT Max(c_id) FROM customer_to_sale_customer;"
 
 	InsertInvoiceToSaleFactorMaxIdQuery = "INSERT INTO invoice_to_sale_factor (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleFactorMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_factor;"
@@ -40,11 +40,11 @@ const (
 )
 
 type DatabaseInterface interface {
-	InsertProduct(p_id int) error
-	GetProduct() (int, error)
+	InsertProductsToGoods(p_id int) error
+	GetProductsToGoods() (int, error)
 
-	InsertCustomer(c_id int) error
-	GetCustomer() (int, error)
+	InsertCustomerToSaleCustomer(c_id int) error
+	GetCustomerToSaleCustomer() (int, error)
 
 	InsertInvoiceToSaleFactor(i_id int) error
 	GetInvoiceToSaleFactor() (int, error)
@@ -82,14 +82,24 @@ func NewDatabase(sdb *sql.DB) DatabaseInterface {
 }
 
 // GetCustomer implements DatabaseInterface
-func (d *Database) GetCustomer() (int, error) {
+func (d *Database) GetCustomerToSaleCustomer() (int, error) {
 	var maxId int
-	err := d.sdb.QueryRow(GetCustomerMaxIdQuery).Scan(&maxId)
+	err := d.sdb.QueryRow(GetCustomerToSaleCustomerMaxIdQuery).Scan(&maxId)
 	if err != nil {
 		return 0, err
 	}
 
 	return maxId, err
+}
+
+// InsertCustomer implements DatabaseInterface
+func (d *Database) InsertCustomerToSaleCustomer(c_id int) error {
+	_, err := d.sdb.Exec(InsertCustomerToSaleCustomerMaxIdQuery, c_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *Database) InsertInvoiceToSaleFactor(i_id int) error {
@@ -140,37 +150,76 @@ func (d *Database) InsertInvoiceToSaleOrder(i_id int) error {
 }
 
 func (d *Database) GetInvoiceToSaleOrder() (int, error) {
-	return 0, nil
+	var maxId int
+	err := d.sdb.QueryRow(GetInvoiceToSaleOrderMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxId, err
 }
 
 func (d *Database) InsertInvoiceToSalePayment(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSalePaymentMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Database) GetInvoiceToSalePayment() (int, error) {
-	return 0, nil
+	var maxId int
+	err := d.sdb.QueryRow(GetInvoiceToSalePaymentMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxId, err
 }
 
 func (d *Database) InsertInvoiceToSalerSelect(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSalerSelectMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Database) GetInvoiceToSalerSelect() (int, error) {
-	return 0, nil
+	var maxId int
+	err := d.sdb.QueryRow(GetInvoiceToSalerSelectMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxId, err
 }
 
 func (d *Database) InsertInvoiceToSaleProforma(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSaleProformaMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Database) GetInvoiceToSaleProforma() (int, error) {
-	return 0, nil
+	var maxId int
+	err := d.sdb.QueryRow(GetInvoiceToSaleProformaMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		return 0, err
+	}
+
+	return maxId, err
 }
 
 // GetProduct implements DatabaseInterface
-func (d *Database) GetProduct() (int, error) {
+func (d *Database) GetProductsToGoods() (int, error) {
 	var maxId int
-	err := d.sdb.QueryRow(GetProductMaxIdQuery).Scan(&maxId)
+	err := d.sdb.QueryRow(GetProductsToGoodsMaxIdQuery).Scan(&maxId)
 	if err != nil {
 		return 0, err
 	}
@@ -200,19 +249,9 @@ func (d *Database) GetTreasuries() (int, error) {
 	return maxId, err
 }
 
-// InsertCustomer implements DatabaseInterface
-func (d *Database) InsertCustomer(c_id int) error {
-	_, err := d.sdb.Exec(InsertCustomerMaxIdQuery, c_id, time.Now())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // InsertProduct implements DatabaseInterface
-func (d *Database) InsertProduct(p_id int) error {
-	_, err := d.sdb.Exec(InsertProductMaxIdQuery, p_id)
+func (d *Database) InsertProductsToGoods(p_id int) error {
+	_, err := d.sdb.Exec(InsertProductsToGoodsMaxIdQuery, p_id)
 	if err != nil {
 		return err
 	}
