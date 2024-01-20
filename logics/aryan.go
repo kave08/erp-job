@@ -209,8 +209,13 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 	var newSalerSelect []models.SalerSelect
 
 	for _, item := range fp {
+		visitorID, err := strconv.Atoi(item.VisitorCode)
+		if err != nil {
+			fmt.Println("Error converting VisitorCode to int:", err)
+			continue
+		}
 		newSalerSelect = append(newSalerSelect, models.SalerSelect{
-			SaleVisitorID:   strconv.Atoi(item.VisitorCode), //TODO: convert it
+			SaleVisitorID:   visitorID,
 			SaleVisitorDesc: item.VisitorName,
 		})
 	}
