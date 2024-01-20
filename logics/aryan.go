@@ -13,8 +13,13 @@ import (
 
 type AryanInterface interface {
 	PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, error)
+	PostProductsToGoods(fp []models.Products) (*resty.Response, error)
 	PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Response, error)
-	PostInvoiceToGoods(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error)
 }
 
 type Aryan struct {
@@ -47,13 +52,13 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 			VoucherDesc:      "ETL-Form Fararavand",
 			SecondNumber:     strconv.Itoa(item.InvoiceId),
 			VoucherDate:      item.InvoiceDate,
-			StockID:          10000006,
+			StockID:          item.WareHouseID,
 			SaleTypeId:       10000001,
 			DeliveryCenterID: 10000002,
-			SaleCenterID:     10000001,
-			PaymentWayID:     10000001,
-			SellerID:         10000002,
-			SaleManID:        10000001,
+			SaleCenterID:     item.CodeMahal,
+			PaymentWayID:     item.SNoePardakht,
+			SellerID:         item.CCForoshandeh,
+			SaleManID:        item.CodeForoshandeh,
 		})
 	}
 
@@ -70,15 +75,15 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 }
 
 // PostSalesOrder Post all sale order data to the secound ERP
-func (a *Aryan) PostInvoiceToGoods(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, error) {
 	var newGoods []models.Goods
 
 	for _, item := range fp {
 		newGoods = append(newGoods, models.Goods{
-			ServiceGoodsID:   item.ProductID,
-			ServiceGoodsCode: "",
-			ServiceGoodsDesc: item.NameKalaFaktor,
-			GroupId:          0,
+			ServiceGoodsID:   item.ID,
+			ServiceGoodsCode: item.Code,
+			ServiceGoodsDesc: item.Name,
+			GroupId:          item.FirstProductGroupID,
 			TypeID:           0,
 			SecUnitType:      0,
 			Level1:           0,
@@ -104,8 +109,8 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Respon
 
 	for _, item := range fc {
 		newSaleCustomer = append(newSaleCustomer, models.SaleCustomer{
-			CustomerID:   item.CustomerId,
-			CustomerCode: strconv.Itoa(item.CustomerCodePosti),
+			CustomerID:   item.ID,
+			CustomerCode: strconv.Itoa(item.Code),
 		})
 	}
 
@@ -127,19 +132,19 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 	for _, item := range fp {
 		newSaleOrder = append(newSaleOrder, models.SaleOrder{
 			CustomerId:       item.CustomerID,
-			VoucherDate:      "",
+			VoucherDate:      item.InvoiceDate,
 			SecondNumber:     0,
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
-			SaleTypeId:       0,
-			DeliveryCenterID: 0,
-			SaleCenterID:     0,
-			PaymentWayID:     0,
-			SellerVisitorID:  item.VisitorCode,
-			ServiceGoodsID:   item.Codekala,
+			SaleTypeId:       10000001,
+			DeliveryCenterID: 10000002,
+			SaleCenterID:     item.CodeMahal,
+			PaymentWayID:     item.SNoePardakht,
+			SellerVisitorID:  item.CCForoshandeh,
+			ServiceGoodsID:   0,
 			Quantity:         float64(item.ProductCount),
 			Fee:              float64(item.ProductFee),
-			DetailDesc:       "",
+			DetailDesc:       item.TozihatFaktor,
 		})
 	}
 
@@ -155,14 +160,14 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 	return res, nil
 }
 
-func (a *Aryan) PostProductsToSaleCenter(fp []models.Products) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error) {
 	var newSaleCenter []models.SaleCenter4SaleSelect
 
 	for _, item := range fp {
 		newSaleCenter = append(newSaleCenter, models.SaleCenter4SaleSelect{
-			StockID:   item.ProductId,
-			StockCode: strconv.Itoa(item.Codekala),
-			StockDesc: item.Name,
+			StockID:   item.WareHouseID,
+			StockCode: strconv.Itoa(item.WareHouseID),
+			StockDesc: item.NameAnbar,
 		})
 	}
 
@@ -184,7 +189,7 @@ func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Res
 	for _, item := range fp {
 		newSalePaymentSelect = append(newSalePaymentSelect, models.SalePaymentSelect{
 			PaymentWayID:   item.PaymentTypeID,
-			PaymentwayDesc: "",
+			PaymentwayDesc: item.TxtNoePardakht,
 		})
 	}
 
@@ -205,7 +210,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 
 	for _, item := range fp {
 		newSalerSelect = append(newSalerSelect, models.SalerSelect{
-			SaleVisitorID:   item.VisitorCode,
+			SaleVisitorID:   strconv.Atoi(item.VisitorCode), //TODO: convert it
 			SaleVisitorDesc: item.VisitorName,
 		})
 	}
@@ -228,7 +233,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 	for _, item := range fp {
 		newSaleProforma = append(newSaleProforma, models.SaleProforma{
 			CustomerId:       item.CustomerID,
-			VoucherDate:      0,
+			VoucherDate:      item.Date,
 			SecondNumber:     "",
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
@@ -236,7 +241,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 			DeliveryCenterID: 0,
 			SaleCenterID:     0,
 			PaymentWayID:     0,
-			SellerVisitorID:  item.VisitorCode,
+			SellerVisitorID:  0,
 			ServiceGoodsID:   item.ProductID,
 			Quantity:         float64(item.ProductCount),
 			Fee:              float64(item.ProductFee),
