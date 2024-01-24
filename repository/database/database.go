@@ -151,6 +151,7 @@ func (d *Database) GetInvoiceToSaleFactor() (int, error) {
 	return id, err
 }
 
+// InsertInvoiceToGoods implements DatabaseInterface
 func (d *Database) InsertInvoiceToGoods(i_id int) error {
 	_, err := d.sdb.Exec(InsertInvoiceToGoodsMaxIdQuery, i_id, time.Now())
 	if err != nil {
@@ -160,14 +161,28 @@ func (d *Database) InsertInvoiceToGoods(i_id int) error {
 	return nil
 }
 
+// GetInvoiceToGoods implements DatabaseInterface
 func (d *Database) GetInvoiceToGoods() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetInvoiceToGoodsMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToGoods %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToGoods %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
 func (d *Database) InsertInvoiceToSaleOrder(i_id int) error {
