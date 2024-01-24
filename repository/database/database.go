@@ -107,7 +107,7 @@ func (d *Database) GetCustomerToSaleCustomer() (int, error) {
 	return id, err
 }
 
-// InsertCustomer implements DatabaseInterface
+// InsertCustomerToSaleCustomer implements DatabaseInterface
 func (d *Database) InsertCustomerToSaleCustomer(c_id int) error {
 	_, err := d.sdb.Exec(InsertCustomerToSaleCustomerMaxIdQuery, c_id, time.Now())
 	if err != nil {
@@ -117,6 +117,7 @@ func (d *Database) InsertCustomerToSaleCustomer(c_id int) error {
 	return nil
 }
 
+// InsertInvoiceToSaleFactor implements DatabaseInterface
 func (d *Database) InsertInvoiceToSaleFactor(i_id int) error {
 	_, err := d.sdb.Exec(InsertInvoiceToSaleFactorMaxIdQuery, i_id, time.Now())
 	if err != nil {
@@ -126,14 +127,28 @@ func (d *Database) InsertInvoiceToSaleFactor(i_id int) error {
 	return nil
 }
 
+// GetInvoiceToSaleFactor implements DatabaseInterface
 func (d *Database) GetInvoiceToSaleFactor() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetInvoiceToSaleFactorMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleFactor %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleFactor %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
 func (d *Database) InsertInvoiceToGoods(i_id int) error {
