@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"time"
 )
 
@@ -81,15 +83,28 @@ func NewDatabase(sdb *sql.DB) DatabaseInterface {
 	}
 }
 
-// GetCustomer implements DatabaseInterface
+// GetCustomerToSaleCustomer implements DatabaseInterface
 func (d *Database) GetCustomerToSaleCustomer() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetCustomerToSaleCustomerMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetCustomerToSaleCustomer %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetCustomerToSaleCustomer %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
 // InsertCustomer implements DatabaseInterface
