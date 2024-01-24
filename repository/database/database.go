@@ -288,7 +288,7 @@ func (d *Database) GetInvoiceToSalerSelect() (int, error) {
 	return id, err
 }
 
-// GetInvoiceToSaleFactor implements DatabaseInterface
+// InsertInvoiceToSaleProforma implements DatabaseInterface
 func (d *Database) InsertInvoiceToSaleProforma(i_id int) error {
 	_, err := d.sdb.Exec(InsertInvoiceToSaleProformaMaxIdQuery, i_id, time.Now())
 	if err != nil {
@@ -322,40 +322,79 @@ func (d *Database) GetInvoiceToSaleProforma() (int, error) {
 	return id, err
 }
 
-// GetProduct implements DatabaseInterface
+// GetProductsToGoods implements DatabaseInterface
 func (d *Database) GetProductsToGoods() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetProductsToGoodsMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetProductsToGoods %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetProductsToGoods %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
 // GetReverted implements DatabaseInterface
 func (d *Database) GetReverted() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetRevertedMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetReverted %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetReverted %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
 // GetTreasuries implements DatabaseInterface
 func (d *Database) GetTreasuries() (int, error) {
-	var maxId int
+	var id int
+	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetTreasuriesMaxIdQuery).Scan(&maxId)
 	if err != nil {
-		return 0, err
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetTreasuries %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetTreasuries %w %v ", err, maxId)
+		}
 	}
 
-	return maxId, err
+	return id, err
 }
 
-// InsertProduct implements DatabaseInterface
+// InsertProductsToGoods implements DatabaseInterface
 func (d *Database) InsertProductsToGoods(p_id int) error {
 	_, err := d.sdb.Exec(InsertProductsToGoodsMaxIdQuery, p_id)
 	if err != nil {
