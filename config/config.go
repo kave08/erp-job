@@ -17,9 +17,10 @@ type config struct {
 	Database      Database      `yaml:"DATABASE"`
 }
 type AryanApp struct {
-	BaseURL string `yaml:"BASE_URL"`
-	APIKey  string `yaml:"API_KEY"`
-	// TODO: add other fields
+	BaseURL  string `yaml:"BASE_URL"`
+	APIKey   string `yaml:"API_KEY"`
+	UserName string `yaml:"UserName"`
+	Pass     string `yaml:"Pass"`
 }
 type FararavandApp struct {
 	BaseURL  string `yaml:"BASE_URL"`
