@@ -136,6 +136,10 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Respon
 	return res, nil
 }
 
+// PostInvoiceToSaleOrder takes a slice of Invoices and posts them to the sale order service.
+// It converts each Invoice into a SaleOrder by mapping its fields to the corresponding SaleOrder fields.
+// The function then sends a POST request with the slice of SaleOrders as the request body to the sale order service endpoint.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error) {
 	var newSaleOrder []models.SaleOrder
 
@@ -158,7 +162,7 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleOrder).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSaleOrder).Post(ASaleOrder)
 	if err != nil {
 		return nil, err
 	}
