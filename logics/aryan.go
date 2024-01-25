@@ -174,6 +174,10 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 	return res, nil
 }
 
+// PostInvoiceToSaleCenter takes a slice of Invoices and posts them to the sale center service.
+// It converts each Invoice into a SaleCenter4SaleSelect by mapping relevant fields such as StockID and StockDesc.
+// The function then makes a POST request to the sale center service endpoint with the slice of SaleCenter4SaleSelect as the request body.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error) {
 	var newSaleCenter []models.SaleCenter4SaleSelect
 
@@ -185,7 +189,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleCenter).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSaleCenter).Post(ASaleCenter4SaleSelect)
 	if err != nil {
 		return nil, err
 	}
