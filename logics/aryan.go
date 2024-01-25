@@ -20,6 +20,8 @@ type AryanInterface interface {
 	PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Response, error)
 }
 
 type Aryan struct {
@@ -258,6 +260,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 	return res, nil
 }
 
+// TODO: update feilds
 // PostInvoiceToSaleProforma takes a slice of Invoices and posts them to the sale proforma service.
 // It converts each Invoice into a SaleProforma by mapping its fields to the corresponding SaleProforma fields.
 // The function then sends a POST request with the slice of SaleProforma as the request body to the sale proforma service endpoint.
@@ -296,6 +299,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 	return res, nil
 }
 
+// TODO: update feilds
 // PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a SaleTypeSelect by mapping its fields to the corresponding SaleTypeSelect fields.
 // The function then sends a POST request with the slice of SaleTypeSelect as the request body to the sale proforma service endpoint.
@@ -323,6 +327,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 	return res, nil
 }
 
+// TODO: update feilds
 // PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
