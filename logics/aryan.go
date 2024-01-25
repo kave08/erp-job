@@ -295,3 +295,57 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 
 	return res, nil
 }
+
+// PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
+// It converts each Invoice into a SaleTypeSelect by mapping its fields to the corresponding SaleTypeSelect fields.
+// The function then sends a POST request with the slice of SaleTypeSelect as the request body to the sale proforma service endpoint.
+// The function returns the server response and an error if the request fails.
+func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error) {
+	var newSaleTypeSelect []models.SaleTypeSelect
+
+	for _, item := range fp {
+		newSaleTypeSelect = append(newSaleTypeSelect, models.SaleTypeSelect{
+			BuySaleTypeID:   item.BranchID,
+			BuySaleTypeCode: "",
+			BuySaleTypeDesc: "",
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSaleTypeSelect).Post(ASaleTypeSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}
+
+// PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
+// It converts each Invoice into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
+// The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
+// The function returns the server response and an error if the request fails.
+func (a *Aryan) PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Response, error) {
+	var newSaleCenterSelect []models.SaleCenterSelect
+
+	for _, item := range fp {
+		newSaleCenterSelect = append(newSaleCenterSelect, models.SaleCenterSelect{
+			CentersID:   item.InvoiceId,
+			CentersCode: "",
+			CenterDesc:  "",
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newSaleCenterSelect).Post(ASaleCenterSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}

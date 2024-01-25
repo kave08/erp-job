@@ -12,7 +12,7 @@ const (
 	//A : aryan const
 	ASaleOrder                = "SaleOrder"
 	ASaleCustomer             = "SaleCustomer"
-	ASaleTypeSelect           = "SaleTypeSelect" //TODO:
+	ASaleTypeSelect           = "SaleTypeSelect"
 	ASaleCenter4SaleSelect    = "SaleCenter4SaleSelect"
 	ASalePaymentSelect        = "SalePaymentSelect"
 	ASaleCenterSelect         = "SaleCenterSelect"         //TODO:
