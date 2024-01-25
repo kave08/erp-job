@@ -77,7 +77,10 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 	return res, nil
 }
 
-// PostSalesOrder Post all sale order data to the secound ERP
+// PostProductsToGoods takes a slice of Products and posts them to the goods service.
+// It converts each Product into a Goods structure by mapping relevant fields.
+// The function then makes a POST request to the goods service endpoint with the slice of Goods as the request body.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, error) {
 	var newGoods []models.Goods
 
@@ -95,7 +98,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, erro
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newGoods).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newGoods).Post(AGoods)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +110,10 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, erro
 	return res, nil
 }
 
+// PostCustomerToSaleCustomer takes a slice of Customers and posts them to the sale customer service.
+// It converts each Customer into a SaleCustomer by copying the ID and converting the Code to a string.
+// The function then makes a POST request to the sale customer service endpoint with the slice of SaleCustomers as the request body.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Response, error) {
 	var newSaleCustomer []models.SaleCustomer
 
@@ -117,7 +124,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Respon
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleCustomer).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSaleCustomer).Post(ASaleCustomer)
 	if err != nil {
 		return nil, err
 	}
