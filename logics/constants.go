@@ -1,21 +1,24 @@
 package logics
 
 const (
-	FGetBaseData              = "GetBaseData"
-	FGetProducts              = "GetProducts"
-	FGetCustomers             = "GetCustomers"
-	FGetInvoices              = "GetInvoices"
-	FGetTreasuries            = "GetTreasuries"
-	FGetInvoiceReturns        = "GetInvoiceReturns"
+	//F : fararavand const
+	FGetBaseData       = "GetBaseData"
+	FGetProducts       = "GetProducts"
+	FGetCustomers      = "GetCustomers"
+	FGetInvoices       = "GetInvoices"
+	FGetTreasuries     = "GetTreasuries"
+	FGetInvoiceReturns = "GetInvoiceReturns"
+
+	//A : aryan const
 	ASaleOrder                = "SaleOrder"
 	ASaleCustomer             = "SaleCustomer"
-	ASaleTypeSelect           = "SaleTypeSelect"
+	ASaleTypeSelect           = "SaleTypeSelect" //TODO:
 	ASaleCenter4SaleSelect    = "SaleCenter4SaleSelect"
 	ASalePaymentSelect        = "SalePaymentSelect"
-	ASaleCenterSelect         = "SaleCenterSelect"
-	ADeliverCenter_SaleSelect = "DeliverCenter_SaleSelect"
+	ASaleCenterSelect         = "SaleCenterSelect"         //TODO:
+	ADeliverCenter_SaleSelect = "DeliverCenter_SaleSelect" //TODO:
 	ASalerSelect              = "SalerSelect"
-	ASaleSellerVisitor        = "SaleSellerVisitor"
+	ASaleSellerVisitor        = "SaleSellerVisitor" //TODO:
 	AGoods                    = "Goods"
 	ASaleProforma             = "SaleProforma"
 	ASaleFactor               = "SaleFactor"

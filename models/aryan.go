@@ -24,7 +24,6 @@ type SaleCustomer struct {
 	CustomerCode string `json:"customer_code"`
 }
 
-// TODO: todo
 type SaleTypeSelect struct {
 	BuySaleTypeID   int    `json:"buy_sale_type_id"`
 	BuySaleTypeCode string `json:"buy_sale_type_code"`
@@ -41,18 +40,17 @@ type SalePaymentSelect struct {
 	PaymentwayDesc string `json:"payment_way_desc"` //TODO:added by mohamad
 }
 
-// TODO:
 type SaleCenterSelect struct {
 	CentersID   int    `json:"centers_id"`
 	CentersCode string `json:"centers_code"` //TODO: added by mohamad
 	CenterDesc  string `json:"center_desc"`  //TODO: added by mohamad
 }
 
-// TODO: tood
 type DeliverCenter_SaleSelect struct {
 	CentersID   int    `json:"centers_id"`   //TODO: added by mohamad
 	CentersCode string `json:"centers_code"` //TODO: added by mohamad
 }
+
 type SalerSelect struct {
 	SaleVisitorID   int    `json:"sale_visitor_id"`
 	SaleVisitorDesc string `json:"sale_visitor_desc"`
@@ -75,21 +73,20 @@ type Goods struct {
 	Level3           int    `json:"level3"`
 }
 
-// TODO: unknown!
 type SaleProforma struct {
 	CustomerId       int       `json:"customer_id"`
-	VoucherDate      time.Time `json:"voucher_date"`  // ""
-	SecondNumber     string    `json:"second_number"` //""
-	VoucherDesc      string    `json:"voucher_desc"`  //
+	VoucherDate      time.Time `json:"voucher_date"`
+	SecondNumber     string    `json:"second_number"`
+	VoucherDesc      string    `json:"voucher_desc"`
 	StockID          int       `json:"stock_id"`
 	SaleTypeId       int       `json:"sale_type_id"`
-	DeliveryCenterID int       `json:"delivery_center_id"` //TODO: added by mohamad
-	SaleCenterID     int       `json:"sale_center_id"`     // ""
-	PaymentWayID     int       `json:"payment_way_id"`     //""
-	SellerVisitorID  int       `json:"seller_visitor_id"`  // invoice.VisitorCode
-	ServiceGoodsID   int       `json:"service_goods_id"`   //ProductID
-	Quantity         float64   `json:"quantity"`           //ProductCount
-	Fee              float64   `json:"fee"`                //ProductFee
+	DeliveryCenterID int       `json:"delivery_center_id"`
+	SaleCenterID     int       `json:"sale_center_id"`
+	PaymentWayID     int       `json:"payment_way_id"`
+	SellerVisitorID  int       `json:"seller_visitor_id"`
+	ServiceGoodsID   int       `json:"service_goods_id"`
+	Quantity         float64   `json:"quantity"`
+	Fee              float64   `json:"fee"`
 	DetailDesc       string    `json:"detail_desc"`
 }
 
