@@ -10,18 +10,18 @@ const (
 	FGetInvoiceReturns = "GetInvoiceReturns"
 
 	//A : aryan const
-	ASaleOrder                = "SaleOrder"
-	ASaleCustomer             = "SaleCustomer"
-	ASaleTypeSelect           = "SaleTypeSelect"
-	ASaleCenter4SaleSelect    = "SaleCenter4SaleSelect"
-	ASalePaymentSelect        = "SalePaymentSelect"
-	ASaleCenterSelect         = "SaleCenterSelect"         //TODO:
-	ADeliverCenter_SaleSelect = "DeliverCenter_SaleSelect" //TODO:
-	ASalerSelect              = "SalerSelect"
-	ASaleSellerVisitor        = "SaleSellerVisitor" //TODO:
-	AGoods                    = "Goods"
-	ASaleProforma             = "SaleProforma"
-	ASaleFactor               = "SaleFactor"
+	ASaleOrder               = "SaleOrder"
+	ASaleCustomer            = "SaleCustomer"
+	ASaleTypeSelect          = "SaleTypeSelect"
+	ASaleCenter4SaleSelect   = "SaleCenter4SaleSelect"
+	ASalePaymentSelect       = "SalePaymentSelect"
+	ASaleCenterSelect        = "SaleCenterSelect"
+	ADeliverCenterSaleSelect = "DeliverCenter_SaleSelect"
+	ASalerSelect             = "SalerSelect"
+	ASaleSellerVisitor       = "SaleSellerVisitor" //TODO:
+	AGoods                   = "Goods"
+	ASaleProforma            = "SaleProforma"
+	ASaleFactor              = "SaleFactor"
 )
 
 const (

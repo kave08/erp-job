@@ -22,6 +22,7 @@ type AryanInterface interface {
 	PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToDeliverCenterSaleSelect(fp []models.Invoices) (*resty.Response, error)
 }
 
 type Aryan struct {
@@ -328,7 +329,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 }
 
 // TODO: update feilds
-// PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
+// PostInvoiceToSaleCenterSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
@@ -344,6 +345,33 @@ func (a *Aryan) PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Resp
 	}
 
 	res, err := a.restyClient.R().SetBody(newSaleCenterSelect).Post(ASaleCenterSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode() != http.StatusOK {
+		fmt.Println(res.Body())
+	}
+
+	return res, nil
+}
+
+// TODO: update feilds
+// PostInvoiceToDeliverCenterSaleSelect takes a slice of Invoices and posts them to the sale type select service.
+// It converts each Invoice into a ADeliverCenterSaleSelect by mapping its fields to the corresponding ADeliverCenterSaleSelect fields.
+// The function then sends a POST request with the slice of ADeliverCenterSaleSelect as the request body to the sale proforma service endpoint.
+// The function returns the server response and an error if the request fails.
+func (a *Aryan) PostInvoiceToDeliverCenterSaleSelect(fp []models.Invoices) (*resty.Response, error) {
+	var newADeliverCenterSaleSelect []models.DeliverCenter_SaleSelect
+
+	for _, item := range fp {
+		newADeliverCenterSaleSelect = append(newADeliverCenterSaleSelect, models.DeliverCenter_SaleSelect{
+			CentersID:   item.BranchID,
+			CentersCode: "",
+		})
+	}
+
+	res, err := a.restyClient.R().SetBody(newADeliverCenterSaleSelect).Post(ADeliverCenterSaleSelect)
 	if err != nil {
 		return nil, err
 	}
