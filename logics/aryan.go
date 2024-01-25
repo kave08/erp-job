@@ -258,6 +258,10 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 	return res, nil
 }
 
+// PostInvoiceToSaleProforma takes a slice of Invoices and posts them to the sale proforma service.
+// It converts each Invoice into a SaleProforma by mapping its fields to the corresponding SaleProforma fields.
+// The function then sends a POST request with the slice of SaleProforma as the request body to the sale proforma service endpoint.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error) {
 	var newSaleProforma []models.SaleProforma
 
@@ -280,7 +284,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleProforma).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSaleProforma).Post(ASaleProforma)
 	if err != nil {
 		return nil, err
 	}
