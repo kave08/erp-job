@@ -227,6 +227,10 @@ func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Res
 	return res, nil
 }
 
+// PostInvoiceToSalerSelect takes a slice of Invoices and posts them to the saler select service.
+// It converts each Invoice into a SalerSelect by mapping the VisitorCode and VisitorName fields.
+// The function then sends a POST request with the slice of SalerSelect as the request body to the saler select service endpoint.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error) {
 	var newSalerSelect []models.SalerSelect
 
@@ -242,7 +246,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSalerSelect).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSalerSelect).Post(ASalerSelect)
 	if err != nil {
 		return nil, err
 	}
