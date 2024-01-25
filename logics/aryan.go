@@ -201,6 +201,10 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 	return res, nil
 }
 
+// PostInvoiceToSalePaymentSelect takes a slice of Invoices and posts them to the sale payment select service.
+// It converts each Invoice into a SalePaymentSelect by mapping the PaymentTypeID and TxtNoePardakht fields.
+// The function then sends a POST request with the slice of SalePaymentSelect as the request body to the sale payment select service endpoint.
+// The function returns the server response and an error if the request fails.
 func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error) {
 	var newSalePaymentSelect []models.SalePaymentSelect
 
@@ -211,7 +215,7 @@ func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Res
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSalePaymentSelect).Post("asdasdasdasd")
+	res, err := a.restyClient.R().SetBody(newSalePaymentSelect).Post(ASalePaymentSelect)
 	if err != nil {
 		return nil, err
 	}
