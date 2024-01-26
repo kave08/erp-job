@@ -128,7 +128,11 @@ func (f *Fararavand) GetProducts() ([]models.Products, error) {
 	return newProducts, nil
 }
 
-// GetInvoices get all invoices' data from the first ERP
+// GetInvoicesForSaleFactor retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
+// It fetches the invoices using the Fararavand API, then checks the database for the last invoice ID that was transferred to the Aryan system.
+// If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInoviceToSaleFactor method.
+// The function returns a slice of new invoices and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) GetInvoicesForSaleFactor() ([]models.Invoices, error) {
 	var newInvoices []models.Invoices
 
