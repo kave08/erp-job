@@ -35,10 +35,8 @@ Before running the application, configure the necessary API keys and database co
 
 Run the application with the following command:
 
-sh ./erp-job [command]
+sh ./erp-job [transfer]
 
-
-Replace `[command]` with the specific operation you want to perform, such as `sync-invoices` or `sync-products`.
 
 ## Modules
 
@@ -57,7 +55,3 @@ The `database.go` module in the `repository/database` directory handles all data
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
