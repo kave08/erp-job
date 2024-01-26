@@ -42,9 +42,9 @@ func transfer() {
 		fmt.Println("Load GetCustomers encountered an error", err.Error())
 		return
 	}
-	_, err = fr.GetInvoices()
+	_, err = fr.GetInvoicesForSaleFactor()
 	if err != nil {
-		fmt.Println("Load GetInvoices encountered an error", err.Error())
+		fmt.Println("Load GetInvoicesForSaleFactor encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetTreasuries()

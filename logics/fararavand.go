@@ -13,7 +13,7 @@ import (
 
 type FararavandInterface interface {
 	GetBaseData() (*models.Fararavand, error)
-	GetInvoices() ([]models.Invoices, error)
+	GetInvoicesForSaleFactor() ([]models.Invoices, error)
 	GetProducts() ([]models.Products, error)
 	GetCustomers() ([]models.Customers, error)
 	GetTreasuries() ([]models.Fararavand, error)
@@ -129,7 +129,7 @@ func (f *Fararavand) GetProducts() ([]models.Products, error) {
 }
 
 // GetInvoices get all invoices' data from the first ERP
-func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
+func (f *Fararavand) GetInvoicesForSaleFactor() ([]models.Invoices, error) {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(FGetInvoices)
@@ -137,17 +137,18 @@ func (f *Fararavand) GetInvoices() ([]models.Invoices, error) {
 		return nil, err
 	}
 
-	lastId := newInvoices[len(newInvoices)-1].InvoiceId
-	iId, err := f.repos.Database.GetInvoiceToSaleFactor()
+	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+
+	iToSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
 		return nil, err
 	}
 
-	if lastId > iId {
-		newInvoices = newInvoices[iId:]
+	if lastInvoiceId > iToSaleFactorId {
+		newInvoices = newInvoices[iToSaleFactorId:]
 		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoiceToSaleFactor(lastId)
+			err = f.repos.Database.InsertInvoiceToSaleFactor(lastInvoiceId)
 			if err != nil {
 				return nil, err
 			}
