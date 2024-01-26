@@ -17,7 +17,7 @@ type AryanInterface interface {
 	PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Response, error)
 	PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error)
-	PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSalePayment(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error)
@@ -208,7 +208,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 // It converts each Invoice into a SalePaymentSelect by mapping the PaymentTypeID and TxtNoePardakht fields.
 // The function then sends a POST request with the slice of SalePaymentSelect as the request body to the sale payment select service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSalePaymentSelect(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) (*resty.Response, error) {
 	var newSalePaymentSelect []models.SalePaymentSelect
 
 	for _, item := range fp {
