@@ -29,32 +29,32 @@ func transfer() {
 
 	_, err := fr.GetBaseData()
 	if err != nil {
-		fmt.Println("1. err", err.Error())
+		fmt.Println("Load GetBaseData encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetProducts()
 	if err != nil {
-		fmt.Println("2. err", err.Error())
+		fmt.Println("Load GetProducts encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetCustomers()
 	if err != nil {
-		fmt.Println("3. err", err.Error())
+		fmt.Println("Load GetCustomers encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetInvoices()
 	if err != nil {
-		fmt.Println("4. err", err.Error())
+		fmt.Println("Load GetInvoices encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetTreasuries()
 	if err != nil {
-		fmt.Println("5. err", err.Error())
+		fmt.Println("Load GetTreasuries encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetInvoiceReturns()
 	if err != nil {
-		fmt.Println("6. err", err.Error())
+		fmt.Println("Load GetInvoiceReturns encountered an error", err.Error())
 	}
 }
 
