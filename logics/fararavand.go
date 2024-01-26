@@ -16,6 +16,7 @@ type FararavandInterface interface {
 	GetInvoicesForSaleFactor() ([]models.Invoices, error)
 	GetInvoicesForSaleOrder() ([]models.Invoices, error)
 	GetInvoicesForSalePayment() ([]models.Invoices, error)
+	GetInvoicesForSalerSelect() ([]models.Invoices, error)
 	GetProductsToGoods() ([]models.Products, error)
 	GetCustomers() ([]models.Customers, error)
 	GetTreasuries() ([]models.Fararavand, error)
@@ -240,6 +241,46 @@ func (f *Fararavand) GetInvoicesForSalePayment() ([]models.Invoices, error) {
 		res, err := f.aryan.PostInvoiceToSalePayment(newInvoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSalePayment(lastInvoiceId)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return newInvoices, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode())
+		return nil, fmt.Errorf(ErrNotOk)
+	}
+
+	return newInvoices, nil
+}
+
+// GetInvoicesForSalerSelect retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
+// It fetches the invoices using the Fararavand API, then checks the database for the last invoice ID that was transferred to the Aryan system.
+// If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalerSelect method.
+// The function returns a slice of new invoices and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+func (f *Fararavand) GetInvoicesForSalerSelect() ([]models.Invoices, error) {
+	var newInvoices []models.Invoices
+
+	resp, err := f.restyClient.R().SetResult(newInvoices).Get(FGetInvoices)
+	if err != nil {
+		return nil, err
+	}
+
+	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+
+	lastSalerSelectId, err := f.repos.Database.GetInvoiceToSalerSelect()
+	if err != nil {
+		return nil, err
+	}
+
+	if lastInvoiceId > lastSalerSelectId {
+		newInvoices = newInvoices[lastSalerSelectId:]
+		res, err := f.aryan.PostInvoiceToSalerSelect(newInvoices)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertInvoiceToSalerSelect(lastInvoiceId)
 			if err != nil {
 				return nil, err
 			}
