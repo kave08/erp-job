@@ -32,9 +32,9 @@ func transfer() {
 		fmt.Println("Load GetBaseData encountered an error", err.Error())
 		return
 	}
-	_, err = fr.GetProducts()
+	_, err = fr.GetProductsToGoods()
 	if err != nil {
-		fmt.Println("Load GetProducts encountered an error", err.Error())
+		fmt.Println("Load GetProductsToGoods encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetCustomers()
