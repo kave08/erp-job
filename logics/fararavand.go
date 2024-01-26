@@ -14,7 +14,7 @@ import (
 type FararavandInterface interface {
 	GetBaseData() (*models.Fararavand, error)
 	GetInvoicesForSaleFactor() ([]models.Invoices, error)
-	GetProducts() ([]models.Products, error)
+	GetProductsToGoods() ([]models.Products, error)
 	GetCustomers() ([]models.Customers, error)
 	GetTreasuries() ([]models.Fararavand, error)
 	GetInvoiceReturns() ([]models.Fararavand, error)
@@ -93,8 +93,12 @@ func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
 	return newCustomers, nil
 }
 
-// GetProducts gets all products data from the first ERP
-func (f *Fararavand) GetProducts() ([]models.Products, error) {
+// GetProductsToGoods retrieves all product data from the Fararavand ERP system and filters them based on the last processed product ID.
+// It fetches the products using the Fararavand API, then checks the database for the last product ID that was transferred to the Aryan system.
+// If new products are found (products with an ID greater than the last processed ID), it sends them to the Aryan system using the PostProductsToGoods method.
+// The function returns a slice of new products and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+func (f *Fararavand) GetProductsToGoods() ([]models.Products, error) {
 	var newProducts []models.Products
 
 	resp, err := f.restyClient.R().SetResult(&newProducts).Get(FGetProducts)
@@ -102,17 +106,18 @@ func (f *Fararavand) GetProducts() ([]models.Products, error) {
 		return nil, err
 	}
 
-	lastId := newProducts[len(newProducts)-1].ID
-	pId, err := f.repos.Database.GetProductsToGoods()
+	lastProductId := newProducts[len(newProducts)-1].ID
+
+	lastGoodsId, err := f.repos.Database.GetProductsToGoods()
 	if err != nil {
 		return nil, err
 	}
 
-	if lastId > pId {
-		newProducts = newProducts[pId:]
+	if lastProductId > lastGoodsId {
+		newProducts = newProducts[lastGoodsId:]
 		res, err := f.aryan.PostProductsToGoods(newProducts)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertProductsToGoods(lastId)
+			err = f.repos.Database.InsertProductsToGoods(lastProductId)
 			if err != nil {
 				return nil, err
 			}
@@ -143,13 +148,13 @@ func (f *Fararavand) GetInvoicesForSaleFactor() ([]models.Invoices, error) {
 
 	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
 
-	iToSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
+	lastSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
 		return nil, err
 	}
 
-	if lastInvoiceId > iToSaleFactorId {
-		newInvoices = newInvoices[iToSaleFactorId:]
+	if lastInvoiceId > lastSaleFactorId {
+		newInvoices = newInvoices[lastSaleFactorId:]
 		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSaleFactor(lastInvoiceId)
