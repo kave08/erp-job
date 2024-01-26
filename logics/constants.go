@@ -18,7 +18,7 @@ const (
 	ASaleCenterSelect        = "SaleCenterSelect"
 	ADeliverCenterSaleSelect = "DeliverCenter_SaleSelect"
 	ASalerSelect             = "SalerSelect"
-	ASaleSellerVisitor       = "SaleSellerVisitor" //TODO:
+	ASaleSellerVisitor       = "SaleSellerVisitor"
 	AGoods                   = "Goods"
 	ASaleProforma            = "SaleProforma"
 	ASaleFactor              = "SaleFactor"
