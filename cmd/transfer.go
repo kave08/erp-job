@@ -66,6 +66,12 @@ func transfer() {
 		return
 	}
 
+	_, err = fr.GetInvoicesForSaleProforma()
+	if err != nil {
+		fmt.Println("Load GetInvoicesForSaleProforma encountered an error", err.Error())
+		return
+	}
+
 	_, err = fr.GetTreasuries()
 	if err != nil {
 		fmt.Println("Load GetTreasuries encountered an error", err.Error())
