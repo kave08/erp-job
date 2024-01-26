@@ -17,9 +17,9 @@ type FararavandInterface interface {
 	GetInvoicesForSaleOrder() ([]models.Invoices, error)
 	GetInvoicesForSalePayment() ([]models.Invoices, error)
 	GetInvoicesForSalerSelect() ([]models.Invoices, error)
-	GetInvoicesForSaleProforma() ([]models.Invoices, error) 
+	GetInvoicesForSaleProforma() ([]models.Invoices, error)
 	GetProductsToGoods() ([]models.Products, error)
-	GetCustomers() ([]models.Customers, error)
+	GetCustomersForSaleCustomer() ([]models.Customers, error)
 	GetTreasuries() ([]models.Fararavand, error)
 	GetInvoiceReturns() ([]models.Fararavand, error)
 }
@@ -62,8 +62,12 @@ func (f *Fararavand) GetBaseData() (*models.Fararavand, error) {
 	return newData, nil
 }
 
-// GetCustomers get all customers' data from the first ERP
-func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
+// GetCustomersForSaleCustomer retrieves all customer data from the Fararavand ERP system and filters them based on the last processed customer ID.
+// It fetches the customers using the Fararavand API, then checks the database for the last customer ID that was transferred to the Aryan system.
+// If new customers are found (customer with an ID greater than the last processed ID), it sends them to the Aryan system using the PostCustomerToSaleCustomer method.
+// The function returns a slice of new customers and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+func (f *Fararavand) GetCustomersForSaleCustomer() ([]models.Customers, error) {
 	var newCustomers []models.Customers
 
 	resp, err := f.restyClient.R().SetResult(newCustomers).Get(FGetCustomers)
@@ -71,17 +75,17 @@ func (f *Fararavand) GetCustomers() ([]models.Customers, error) {
 		return nil, err
 	}
 
-	lastId := newCustomers[len(newCustomers)-1].ID
-	cId, err := f.repos.Database.GetCustomerToSaleCustomer()
+	lastCustomerId := newCustomers[len(newCustomers)-1].ID
+	lastSaleCustomerId, err := f.repos.Database.GetCustomerToSaleCustomer()
 	if err != nil {
 		return nil, err
 	}
 
-	if lastId > cId {
-		newCustomers = newCustomers[cId:]
+	if lastCustomerId > lastSaleCustomerId {
+		newCustomers = newCustomers[lastSaleCustomerId:]
 		res, err := f.aryan.PostCustomerToSaleCustomer(newCustomers)
 		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertCustomerToSaleCustomer(lastId)
+			err = f.repos.Database.InsertCustomerToSaleCustomer(lastCustomerId)
 			if err != nil {
 				return nil, err
 			}

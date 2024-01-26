@@ -37,9 +37,9 @@ func transfer() {
 		fmt.Println("Load GetProductsToGoods encountered an error", err.Error())
 		return
 	}
-	_, err = fr.GetCustomers()
+	_, err = fr.GetCustomersForSaleCustomer()
 	if err != nil {
-		fmt.Println("Load GetCustomers encountered an error", err.Error())
+		fmt.Println("Load GetCustomersForSaleCustomer encountered an error", err.Error())
 		return
 	}
 	_, err = fr.GetInvoicesForSaleFactor()
