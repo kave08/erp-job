@@ -19,9 +19,6 @@ const (
 	InsertInvoiceToSaleFactorMaxIdQuery = "INSERT INTO invoice_to_sale_factor (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleFactorMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_factor;"
 
-	InsertInvoiceToGoodsMaxIdQuery = "INSERT INTO invoice_to_goods (i_id, created_at) VALUES(?, ?);"
-	GetInvoiceToGoodsMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_goods;"
-
 	InsertInvoiceToSaleOrderMaxIdQuery = "INSERT INTO invoice_to_sale_order (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleOrderMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_order;"
 
@@ -50,9 +47,6 @@ type DatabaseInterface interface {
 
 	InsertInvoiceToSaleFactor(i_id int) error
 	GetInvoiceToSaleFactor() (int, error)
-
-	InsertInvoiceToGoods(i_id int) error
-	GetInvoiceToGoods() (int, error)
 
 	InsertInvoiceToSaleOrder(i_id int) error
 	GetInvoiceToSaleOrder() (int, error)
@@ -151,39 +145,6 @@ func (d *Database) GetInvoiceToSaleFactor() (int, error) {
 	return id, err
 }
 
-// InsertInvoiceToGoods implements DatabaseInterface
-func (d *Database) InsertInvoiceToGoods(i_id int) error {
-	_, err := d.sdb.Exec(InsertInvoiceToGoodsMaxIdQuery, i_id, time.Now())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// GetInvoiceToGoods implements DatabaseInterface
-func (d *Database) GetInvoiceToGoods() (int, error) {
-	var id int
-	var maxId sql.NullInt64
-	err := d.sdb.QueryRow(GetInvoiceToGoodsMaxIdQuery).Scan(&maxId)
-	if err != nil {
-		switch err {
-		case sql.ErrNoRows:
-			if maxId.Valid {
-				id = int(maxId.Int64)
-			} else {
-				id = 0
-			}
-		case sql.ErrConnDone, sql.ErrTxDone:
-			log.Printf("Database connection or transaction error: %v", err)
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToGoods %w %v ", err, maxId)
-		default:
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToGoods %w %v ", err, maxId)
-		}
-	}
-
-	return id, err
-}
 
 // InsertInvoiceToSaleOrder implements DatabaseInterface
 func (d *Database) InsertInvoiceToSaleOrder(i_id int) error {
