@@ -37,18 +37,18 @@ type SaleCenter4SaleSelect struct {
 }
 type SalePaymentSelect struct {
 	PaymentWayID   int    `json:"payment_way_id"`
-	PaymentwayDesc string `json:"payment_way_desc"` //TODO:added by mohamad
+	PaymentwayDesc string `json:"payment_way_desc"`
 }
 
 type SaleCenterSelect struct {
 	CentersID   int    `json:"centers_id"`
-	CentersCode string `json:"centers_code"` //TODO: added by mohamad
-	CenterDesc  string `json:"center_desc"`  //TODO: added by mohamad
+	CentersCode string `json:"centers_code"`
+	CenterDesc  string `json:"center_desc"`
 }
 
 type DeliverCenter_SaleSelect struct {
-	CentersID   int    `json:"centers_id"`   //TODO: added by mohamad
-	CentersCode string `json:"centers_code"` //TODO: added by mohamad
+	CentersID   int    `json:"centers_id"`
+	CentersCode string `json:"centers_code"`
 }
 
 type SalerSelect struct {
@@ -57,8 +57,8 @@ type SalerSelect struct {
 }
 
 type SaleSellerVisitor struct {
-	CentersID   int    `json:"centers_id"`   //TODO: added by mohamad
-	CentersCode string `json:"centers_code"` //TODO: added by mohamad
+	CentersID   int    `json:"centers_id"`
+	CentersCode string `json:"centers_code"`
 }
 
 type Goods struct {
