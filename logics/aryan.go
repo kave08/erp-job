@@ -205,7 +205,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 	return res, nil
 }
 
-// PostInvoiceToSalePaymentSelect takes a slice of Invoices and posts them to the sale payment select service.
+// PostInvoiceToSalePayment takes a slice of Invoices and posts them to the sale payment select service.
 // It converts each Invoice into a SalePaymentSelect by mapping the PaymentTypeID and TxtNoePardakht fields.
 // The function then sends a POST request with the slice of SalePaymentSelect as the request body to the sale payment select service endpoint.
 // The function returns the server response and an error if the request fails.
@@ -331,8 +331,8 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 	return res, nil
 }
 
-// PostInvoiceToSaleCenterSelect takes a slice of Invoices and posts them to the sale type select service.
-// It converts each Invoice into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
+// PostBaseDataToSaleCenterSelect takes a slice of payment types of BaseData and posts them to the sale center select service.
+// It converts each base data into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
 func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error) {
@@ -358,9 +358,9 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty
 	return res, nil
 }
 
-// PostInvoiceToDeliverCenterSaleSelect takes a slice of Invoices and posts them to the sale type select service.
-// It converts each Invoice into a ADeliverCenterSaleSelect by mapping its fields to the corresponding ADeliverCenterSaleSelect fields.
-// The function then sends a POST request with the slice of ADeliverCenterSaleSelect as the request body to the sale proforma service endpoint.
+// PostBaseDataToDeliverCenterSaleSelect takes a slice of payment types of BaseData and posts them to the deliver center sale select service.
+// It converts each PaymentTypes into a DeliverCenterSaleSelect by mapping its fields to the corresponding DeliverCenterSaleSelect fields.
+// The function then sends a POST request with the slice of DeliverCenterSaleSelect as the request body to the deliver center sale select service endpoint.
 // The function returns the server response and an error if the request fails.
 func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) (*resty.Response, error) {
 	var newADeliverCenterSaleSelect []models.DeliverCenter_SaleSelect
@@ -384,9 +384,9 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 	return res, nil
 }
 
-// PostBaseDataToSaleSellerVisitor take a struct of BaseData and posts them to the Sale seller visitor service.
-// It converts each Invoice into a SaleSellerVisitor by mapping the PaymentTypeID and TxtNoePardakht fields.
-// The function then sends a POST request with the slice of SaleSellerVisitor as the request body to the sale payment select service endpoint.
+// PostBaseDataToSaleSellerVisitor take a struct of payment types of BaseData and posts them to the sale seller visitor service.
+// It converts each PaymentTypes into a SaleSellerVisitor by mapping its fields to the corresponding SaleSellerVisitor fields.
+// The function then sends a POST request with the slice of SaleSellerVisitor as the request body to the sale seller visitor service endpoint.
 // The function returns the server response and an error if the request fails.
 func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error) {
 	var newSaleSellerVisitor []models.SaleSellerVisitor
