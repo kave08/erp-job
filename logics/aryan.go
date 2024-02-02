@@ -21,8 +21,9 @@ type AryanInterface interface {
 	PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error)
-	PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Response, error)
-	PostInvoiceToDeliverCenterSaleSelect(fp []models.Invoices) (*resty.Response, error)
+	PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error)
+	PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) (*resty.Response, error)
+	PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error)
 }
 
 type Aryan struct {
@@ -261,7 +262,6 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 	return res, nil
 }
 
-// TODO: update feilds
 // PostInvoiceToSaleProforma takes a slice of Invoices and posts them to the sale proforma service.
 // It converts each Invoice into a SaleProforma by mapping its fields to the corresponding SaleProforma fields.
 // The function then sends a POST request with the slice of SaleProforma as the request body to the sale proforma service endpoint.
@@ -270,21 +270,25 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 	var newSaleProforma []models.SaleProforma
 
 	for _, item := range fp {
+		visitorCode, err := strconv.Atoi(item.VisitorCode)
+		if err != nil {
+			return nil, err
+		}
 		newSaleProforma = append(newSaleProforma, models.SaleProforma{
 			CustomerId:       item.CustomerID,
 			VoucherDate:      item.Date,
 			SecondNumber:     "",
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
-			SaleTypeId:       0,
+			SaleTypeId:       item.SNoePardakht,
 			DeliveryCenterID: 0,
 			SaleCenterID:     0,
-			PaymentWayID:     0,
-			SellerVisitorID:  0,
+			PaymentWayID:     item.SNoePardakht,
+			SellerVisitorID:  visitorCode,
 			ServiceGoodsID:   item.ProductID,
 			Quantity:         float64(item.ProductCount),
 			Fee:              float64(item.ProductFee),
-			DetailDesc:       "",
+			DetailDesc:       item.TozihatFaktor,
 		})
 	}
 
@@ -300,7 +304,6 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 	return res, nil
 }
 
-// TODO: update feilds
 // PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a SaleTypeSelect by mapping its fields to the corresponding SaleTypeSelect fields.
 // The function then sends a POST request with the slice of SaleTypeSelect as the request body to the sale proforma service endpoint.
@@ -310,9 +313,9 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 
 	for _, item := range fp {
 		newSaleTypeSelect = append(newSaleTypeSelect, models.SaleTypeSelect{
-			BuySaleTypeID:   item.BranchID,
-			BuySaleTypeCode: "",
-			BuySaleTypeDesc: "",
+			BuySaleTypeID:   item.SNoePardakht,
+			BuySaleTypeCode: item.Codekala,
+			BuySaleTypeDesc: item.TxtNoePardakht,
 		})
 	}
 
@@ -328,19 +331,18 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 	return res, nil
 }
 
-// TODO: update feilds
 // PostInvoiceToSaleCenterSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error) {
 	var newSaleCenterSelect []models.SaleCenterSelect
 
-	for _, item := range fp {
+	for _, item := range baseData.PaymentTypes {
 		newSaleCenterSelect = append(newSaleCenterSelect, models.SaleCenterSelect{
-			CentersID:   item.InvoiceId,
-			CentersCode: "",
-			CenterDesc:  "",
+			CentersID:   item.ID,
+			CentersCode: strconv.Itoa(item.ID),
+			CenterDesc:  item.Name,
 		})
 	}
 
@@ -356,18 +358,17 @@ func (a *Aryan) PostInvoiceToSaleCenterSelect(fp []models.Invoices) (*resty.Resp
 	return res, nil
 }
 
-// TODO: update feilds
 // PostInvoiceToDeliverCenterSaleSelect takes a slice of Invoices and posts them to the sale type select service.
 // It converts each Invoice into a ADeliverCenterSaleSelect by mapping its fields to the corresponding ADeliverCenterSaleSelect fields.
 // The function then sends a POST request with the slice of ADeliverCenterSaleSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToDeliverCenterSaleSelect(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) (*resty.Response, error) {
 	var newADeliverCenterSaleSelect []models.DeliverCenter_SaleSelect
 
-	for _, item := range fp {
+	for _, item := range baseData.PaymentTypes {
 		newADeliverCenterSaleSelect = append(newADeliverCenterSaleSelect, models.DeliverCenter_SaleSelect{
-			CentersID:   item.BranchID,
-			CentersCode: "",
+			CentersID:   item.ID,
+			CentersCode: strconv.Itoa(item.ID),
 		})
 	}
 
@@ -383,18 +384,17 @@ func (a *Aryan) PostInvoiceToDeliverCenterSaleSelect(fp []models.Invoices) (*res
 	return res, nil
 }
 
-// TODO: update feilds
-// PostInvoiceToSaleSellerVisitor takes a slice of Invoices and posts them to the sale payment select service.
+// PostBaseDataToSaleSellerVisitor take a struct of BaseData and posts them to the Sale seller visitor service.
 // It converts each Invoice into a SaleSellerVisitor by mapping the PaymentTypeID and TxtNoePardakht fields.
 // The function then sends a POST request with the slice of SaleSellerVisitor as the request body to the sale payment select service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleSellerVisitor(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error) {
 	var newSaleSellerVisitor []models.SaleSellerVisitor
 
-	for _, item := range fp {
+	for _, item := range baseData.PaymentTypes {
 		newSaleSellerVisitor = append(newSaleSellerVisitor, models.SaleSellerVisitor{
-			CentersID:   item.BranchID,
-			CentersCode: "",
+			CentersID:   item.ID,
+			CentersCode: strconv.Itoa(item.ID),
 		})
 	}
 
