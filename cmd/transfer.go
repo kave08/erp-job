@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"erp-job/config"
-	"erp-job/logics"
 	"erp-job/repository"
+	"erp-job/services/aryan"
+	"erp-job/services/fararavand"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -24,8 +25,8 @@ func transfer() {
 
 	repos := repository.NewRepository(mdb.MysqlConnection)
 
-	ar := logics.NewAryan(repos)
-	fr := logics.NewFararavand(repos, ar)
+	ar := aryan.NewAryan(repos)
+	fr := fararavand.NewFararavand(repos, ar)
 
 	_, err := fr.GetBaseData()
 	if err != nil {
@@ -37,7 +38,7 @@ func transfer() {
 		fmt.Println("Load GetProductsToGoods encountered an error", err.Error())
 		return
 	}
-	_, err = fr.GetCustomersForSaleCustomer()
+	err = fr.GetCustomersForSaleCustomer()
 	if err != nil {
 		fmt.Println("Load GetCustomersForSaleCustomer encountered an error", err.Error())
 		return
