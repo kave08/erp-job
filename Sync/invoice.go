@@ -1,43 +1,87 @@
 package sync
 
 import (
+	"erp-job/config"
+	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
+type Invoices struct {
+	restyClient *resty.Client
+	baseURL     string
+	httpClient  *http.Client
+	repos       *repository.Repository
+	aryan       aryan.AryanInterface
+	fararavand  fararavand.FararavandInterface
+}
 
-func Invoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
+func NewInvoices(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Invoices {
+	c := resty.New().
+		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	err := fr.SyncInvoicesWithSaleFactor()
+	return &Invoices{
+		restyClient: c,
+		baseURL:     config.Cfg.FararavandApp.BaseURL,
+		repos:       repos,
+		aryan:       ar,
+		fararavand:  fr,
+		httpClient: &http.Client{
+			Timeout: requestTimeout,
+		},
+	}
+}
+
+func (i *Invoices) Invoice() error {
+	var newInvoices []models.Invoices
+
+	resp, err := i.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode())
+		return fmt.Errorf(utility.ErrNotOk)
+	}
+
+	err = i.fararavand.SyncInvoicesWithSaleFactor(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSaleFactor encountered an error", err.Error())
-		return
+		return err
 	}
 
-	err = fr.SyncInvoicesWithSaleOrder()
+	err = i.fararavand.SyncInvoicesWithSaleOrder(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSaleOrder encountered an error", err.Error())
-		return
+		return err
 	}
 
-	err = fr.SyncInvoicesWithSalePayment()
+	err = i.fararavand.SyncInvoicesWithSalePayment(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSalePayment encountered an error", err.Error())
-		return
+		return err
 	}
 
-	err = fr.SyncInvoicesWithSalerSelect()
+	err = i.fararavand.SyncInvoicesWithSalerSelect(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSalerSelect encountered an error", err.Error())
-		return
+		return err
 	}
 
-	err = fr.SyncInvoicesWithSaleProforma()
+	err = i.fararavand.SyncInvoicesWithSaleProforma(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSaleProforma encountered an error", err.Error())
-		return
+		return err
 	}
 
+	return nil
 }

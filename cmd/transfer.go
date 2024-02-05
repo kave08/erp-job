@@ -6,6 +6,7 @@ import (
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/sync"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,8 @@ var transferCmd = &cobra.Command{
 
 func transfer() {
 
+	Timeout := time.Duration(3 * time.Second)
+
 	mdb := config.LoadConfig(configPath)
 
 	repos := repository.NewRepository(mdb.MysqlConnection)
@@ -30,7 +33,7 @@ func transfer() {
 
 	sync.BaseData(repos, fr, ar)
 	sync.Customer(repos, fr, ar)
-	sync.Invoice(repos, fr, ar)
+	sync.NewInvoices(repos, fr, ar, Timeout)
 	sync.InvoiceReturns(repos, fr, ar)
 	sync.Products(repos, fr, ar)
 	sync.Treasuries(repos, fr, ar)

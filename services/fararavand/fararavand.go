@@ -135,7 +135,7 @@ func (f *Fararavand) SyncProductsWithGoods() error {
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInoviceToSaleFactor method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleFactor() error {
+func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) error {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
@@ -175,7 +175,7 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor() error {
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleOrder method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleOrder() error {
+func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
@@ -215,7 +215,7 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder() error {
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalePayment method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSalePayment() error {
+func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) error {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
@@ -255,7 +255,7 @@ func (f *Fararavand) SyncInvoicesWithSalePayment() error {
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalerSelect method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSalerSelect() error {
+func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) error {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
@@ -295,7 +295,7 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect() error {
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleProforma method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleProforma() error {
+func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) error {
 	var newInvoices []models.Invoices
 
 	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
