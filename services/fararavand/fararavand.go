@@ -136,14 +136,8 @@ func (f *Fararavand) SyncProductsWithGoods() error {
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) error {
-	var newInvoices []models.Invoices
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
-	if err != nil {
-		return err
-	}
-
-	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
@@ -151,8 +145,8 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) erro
 	}
 
 	if lastInvoiceId > lastSaleFactorId {
-		newInvoices = newInvoices[lastSaleFactorId:]
-		res, err := f.aryan.PostInoviceToSaleFactor(newInvoices)
+		invoices = invoices[lastSaleFactorId:]
+		res, err := f.aryan.PostInoviceToSaleFactor(invoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSaleFactor(lastInvoiceId)
 			if err != nil {
@@ -160,11 +154,6 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) erro
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
@@ -176,14 +165,8 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) erro
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error {
-	var newInvoices []models.Invoices
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
-	if err != nil {
-		return err
-	}
-
-	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleOrderId, err := f.repos.Database.GetInvoiceToSaleOrder()
 	if err != nil {
@@ -191,8 +174,8 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
 	}
 
 	if lastInvoiceId > lastSaleOrderId {
-		newInvoices = newInvoices[lastSaleOrderId:]
-		res, err := f.aryan.PostInvoiceToSaleOrder(newInvoices)
+		invoices = invoices[lastSaleOrderId:]
+		res, err := f.aryan.PostInvoiceToSaleOrder(invoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSaleOrder(lastInvoiceId)
 			if err != nil {
@@ -200,11 +183,6 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
@@ -216,14 +194,8 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) error {
-	var newInvoices []models.Invoices
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
-	if err != nil {
-		return err
-	}
-
-	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSalePaymentId, err := f.repos.Database.GetInvoiceToSalePayment()
 	if err != nil {
@@ -231,8 +203,8 @@ func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) err
 	}
 
 	if lastInvoiceId > lastSalePaymentId {
-		newInvoices = newInvoices[lastSalePaymentId:]
-		res, err := f.aryan.PostInvoiceToSalePayment(newInvoices)
+		invoices = invoices[lastSalePaymentId:]
+		res, err := f.aryan.PostInvoiceToSalePayment(invoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSalePayment(lastInvoiceId)
 			if err != nil {
@@ -240,11 +212,6 @@ func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) err
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
@@ -256,14 +223,8 @@ func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) err
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) error {
-	var newInvoices []models.Invoices
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
-	if err != nil {
-		return err
-	}
-
-	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSalerSelectId, err := f.repos.Database.GetInvoiceToSalerSelect()
 	if err != nil {
@@ -271,8 +232,8 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) err
 	}
 
 	if lastInvoiceId > lastSalerSelectId {
-		newInvoices = newInvoices[lastSalerSelectId:]
-		res, err := f.aryan.PostInvoiceToSalerSelect(newInvoices)
+		invoices = invoices[lastSalerSelectId:]
+		res, err := f.aryan.PostInvoiceToSalerSelect(invoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSalerSelect(lastInvoiceId)
 			if err != nil {
@@ -280,11 +241,6 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) err
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
@@ -296,14 +252,8 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) err
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) error {
-	var newInvoices []models.Invoices
 
-	resp, err := f.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)
-	if err != nil {
-		return err
-	}
-
-	lastInvoiceId := newInvoices[len(newInvoices)-1].InvoiceId
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleProforma()
 	if err != nil {
@@ -311,8 +261,8 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) er
 	}
 
 	if lastInvoiceId > lastSaleProformaId {
-		newInvoices = newInvoices[lastSaleProformaId:]
-		res, err := f.aryan.PostInvoiceToSaleProforma(newInvoices)
+		invoices = invoices[lastSaleProformaId:]
+		res, err := f.aryan.PostInvoiceToSaleProforma(invoices)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertInvoiceToSaleProforma(lastInvoiceId)
 			if err != nil {
@@ -320,11 +270,6 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) er
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
