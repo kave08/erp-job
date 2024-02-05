@@ -84,15 +84,9 @@ func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers)
 // If new products are found (products with an ID greater than the last processed ID), it sends them to the Aryan system using the PostProductsToGoods method.
 // The function returns a slice of new products and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncProductsWithGoods() error {
-	var newProducts []models.Products
+func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 
-	resp, err := f.restyClient.R().SetResult(&newProducts).Get(utility.FGetProducts)
-	if err != nil {
-		return err
-	}
-
-	lastProductId := newProducts[len(newProducts)-1].ID
+	lastProductId := products[len(products)-1].ID
 
 	lastGoodsId, err := f.repos.Database.GetProductsToGoods()
 	if err != nil {
@@ -100,8 +94,8 @@ func (f *Fararavand) SyncProductsWithGoods() error {
 	}
 
 	if lastProductId > lastGoodsId {
-		newProducts = newProducts[lastGoodsId:]
-		res, err := f.aryan.PostProductsToGoods(newProducts)
+		products = products[lastGoodsId:]
+		res, err := f.aryan.PostProductsToGoods(products)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertProductsToGoods(lastProductId)
 			if err != nil {
@@ -109,11 +103,6 @@ func (f *Fararavand) SyncProductsWithGoods() error {
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
