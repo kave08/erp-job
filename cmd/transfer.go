@@ -22,7 +22,7 @@ var transferCmd = &cobra.Command{
 
 func transfer() {
 
-	Timeout := time.Duration(3 * time.Second)
+	timeout := time.Duration(3 * time.Second)
 
 	mdb := config.LoadConfig(configPath)
 
@@ -32,8 +32,8 @@ func transfer() {
 	fr := fararavand.NewFararavand(repos, ar)
 
 	sync.BaseData(repos, fr, ar)
-	sync.Customer(repos, fr, ar)
-	sync.NewInvoices(repos, fr, ar, Timeout)
+	sync.NewCustomers(repos, fr, ar, timeout)
+	sync.NewInvoices(repos, fr, ar, timeout)
 	sync.InvoiceReturns(repos, fr, ar)
 	sync.Products(repos, fr, ar)
 	sync.Treasuries(repos, fr, ar)
