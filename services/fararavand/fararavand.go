@@ -56,23 +56,17 @@ func (f *Fararavand) SyncBaseData() error {
 // If new customers are found (customer with an ID greater than the last processed ID), it sends them to the Aryan system using the PostCustomerToSaleCustomer method.
 // The function returns a slice of new customers and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncCustomersWithSaleCustomer() error {
-	var newCustomers []models.Customers
+func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers) error {
 
-	resp, err := f.restyClient.R().SetResult(newCustomers).Get(utility.FGetCustomers)
-	if err != nil {
-		return err
-	}
-
-	lastCustomerId := newCustomers[len(newCustomers)-1].ID
+	lastCustomerId := customers[len(customers)-1].ID
 	lastSaleCustomerId, err := f.repos.Database.GetCustomerToSaleCustomer()
 	if err != nil {
 		return err
 	}
 
 	if lastCustomerId > lastSaleCustomerId {
-		newCustomers = newCustomers[lastSaleCustomerId:]
-		res, err := f.aryan.PostCustomerToSaleCustomer(newCustomers)
+		customers = customers[lastSaleCustomerId:]
+		res, err := f.aryan.PostCustomerToSaleCustomer(customers)
 		if res.StatusCode() == http.StatusOK {
 			err = f.repos.Database.InsertCustomerToSaleCustomer(lastCustomerId)
 			if err != nil {
@@ -80,11 +74,6 @@ func (f *Fararavand) SyncCustomersWithSaleCustomer() error {
 			}
 		}
 		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
