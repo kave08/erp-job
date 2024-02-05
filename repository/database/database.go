@@ -31,6 +31,9 @@ const (
 	InsertInvoiceToSaleProformaMaxIdQuery = "INSERT INTO invoice_to_sale_proforma (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleProformaMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_proforma;"
 
+	InsertInvoiceToSaleCenterMaxIdQuery = "INSERT INTO invoice_to_sale_center (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSaleCenterMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_center;"
+
 	InsertTreasuriesMaxIdQuery = "INSERT INTO treasuries (t_id, created_at) VALUES(?, ?);"
 	GetTreasuriesMaxIdQuery    = "SELECT Max(t_id) FROM treasuries;"
 
@@ -59,6 +62,9 @@ type DatabaseInterface interface {
 
 	InsertInvoiceToSaleProforma(i_id int) error
 	GetInvoiceToSaleProforma() (int, error)
+
+	InsertInvoiceToSaleCenter(i_id int) error
+	GetInvoiceToSaleCenter() (int, error)
 
 	InsertTreasuries(t_id int) error
 	GetTreasuries() (int, error)
@@ -144,7 +150,6 @@ func (d *Database) GetInvoiceToSaleFactor() (int, error) {
 
 	return id, err
 }
-
 
 // InsertInvoiceToSaleOrder implements DatabaseInterface
 func (d *Database) InsertInvoiceToSaleOrder(i_id int) error {
@@ -264,6 +269,40 @@ func (d *Database) GetInvoiceToSaleProforma() (int, error) {
 	var id int
 	var maxId sql.NullInt64
 	err := d.sdb.QueryRow(GetInvoiceToSaleProformaMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleProforma %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleProforma %w %v ", err, maxId)
+		}
+	}
+
+	return id, err
+}
+
+// InsertInvoiceToSaleCenter implements DatabaseInterface
+func (d *Database) InsertInvoiceToSaleCenter(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSaleCenterMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetInvoiceToSaleCenter implements DatabaseInterface
+func (d *Database) GetInvoiceToSaleCenter() (int, error) {
+	var id int
+	var maxId sql.NullInt64
+	err := d.sdb.QueryRow(GetInvoiceToSaleCenterMaxIdQuery).Scan(&maxId)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:

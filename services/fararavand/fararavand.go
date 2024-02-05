@@ -253,6 +253,35 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) er
 	return nil
 }
 
+// SyncInvoicesWithSaleCenter retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
+// It fetches the invoices using the Fararavand API, then checks the database for the last invoice ID that was transferred to the Aryan system.
+// If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleProforma method.
+// The function returns a slice of new invoices and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) error {
+
+	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
+
+	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleCenter()
+	if err != nil {
+		return err
+	}
+
+	if lastInvoiceId > lastSaleProformaId {
+		invoices = invoices[lastSaleProformaId:]
+		res, err := f.aryan.PostInvoiceToSaleCenter(invoices)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertInvoiceToSaleCenter(lastInvoiceId)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	}
+
+	return nil
+}
+
 // GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) SyncTreasuries() error {
 	var newTreasuries []models.Fararavand
