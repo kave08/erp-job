@@ -29,10 +29,10 @@ func transfer() {
 	fr := fararavand.NewFararavand(repos, ar)
 
 	sync.BaseData(repos, fr, ar)
-	sync.SyncCustomer(repos, fr, ar)
-	sync.SyncInvoice(repos, fr, ar)
+	sync.Customer(repos, fr, ar)
+	sync.Invoice(repos, fr, ar)
 	sync.InvoiceReturns(repos, fr, ar)
-	sync.SyncProducts(repos, fr, ar)
+	sync.Products(repos, fr, ar)
 	sync.Treasuries(repos, fr, ar)
 
 }

@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-func SyncProducts(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
+func Products(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
 	err := fr.SyncProductsWithGoods()
 	if err != nil {
 		fmt.Println("Load SyncProductsWithGoods encountered an error", err.Error())

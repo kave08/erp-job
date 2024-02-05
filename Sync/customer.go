@@ -7,7 +7,7 @@ import (
 	"fmt"
 )
 
-func SyncCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
+func Customer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
 
 	err := fr.SyncCustomersWithSaleCustomer()
 	if err != nil {

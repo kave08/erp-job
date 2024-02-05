@@ -8,7 +8,7 @@ import (
 )
 
 
-func SyncInvoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
+func Invoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) {
 
 	err := fr.SyncInvoicesWithSaleFactor()
 	if err != nil {
