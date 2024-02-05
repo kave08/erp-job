@@ -15,7 +15,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type Invoices struct {
+type Invoice struct {
 	restyClient *resty.Client
 	baseURL     string
 	httpClient  *http.Client
@@ -24,11 +24,11 @@ type Invoices struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewInvoices(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Invoices {
+func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Invoice {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	return &Invoices{
+	return &Invoice{
 		restyClient: c,
 		baseURL:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
@@ -40,7 +40,7 @@ func NewInvoices(repos *repository.Repository, fr fararavand.FararavandInterface
 	}
 }
 
-func (i *Invoices) Invoice() error {
+func (i *Invoice) Invoices() error {
 	var newInvoices []models.Invoices
 
 	resp, err := i.restyClient.R().SetResult(newInvoices).Get(utility.FGetInvoices)

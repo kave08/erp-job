@@ -15,7 +15,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type Customers struct {
+type Customer struct {
 	restyClient *resty.Client
 	baseURL     string
 	httpClient  *http.Client
@@ -24,11 +24,11 @@ type Customers struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewCustomers(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Customers {
+func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Customer {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	return &Customers{
+	return &Customer{
 		restyClient: c,
 		baseURL:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
@@ -40,7 +40,7 @@ func NewCustomers(repos *repository.Repository, fr fararavand.FararavandInterfac
 	}
 }
 
-func (c Customers) Customer() error {
+func (c Customer) Customers() error {
 
 	var newCustomers []models.Customers
 
