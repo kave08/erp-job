@@ -11,6 +11,7 @@ type FararavandInterface interface {
 	SyncInvoicesWithSalePayment(invoices []models.Invoices) error
 	SyncInvoicesWithSalerSelect(invoices []models.Invoices) error
 	SyncInvoicesWithSaleProforma(invoices []models.Invoices) error
+	SyncInvoicesWithSaleCenter(invoices []models.Invoices) error
 	SyncTreasuries() error
 	SyncInvoiceReturns() error
 }
