@@ -3,12 +3,12 @@ package models
 import "time"
 
 type Fararavand struct {
-	BaseData   BaseData
-	Customers  Customers
-	Products   Products
-	Invoices   Invoices
-	Treasuries Treasuries
-	Reverted   Reverted
+	BaseData      BaseData
+	Customers     Customers
+	Products      Products
+	Invoices      Invoices
+	Treasuries    Treasuries
+	InvoiceReturn InvoiceReturn
 }
 
 type BaseData struct {
@@ -182,7 +182,7 @@ type Treasuries struct {
 	ShomarehSanad             string `json:"shomarehSanad"`
 }
 
-type Reverted struct {
+type InvoiceReturn struct {
 	BranchID                 int    `json:"branchId"`
 	CodeDoreh                int    `json:"codeDoreh"`
 	InvoiceID                int    `json:"invoiceId"`
