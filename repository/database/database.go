@@ -34,11 +34,14 @@ const (
 	InsertInvoiceToSaleCenterMaxIdQuery = "INSERT INTO invoice_to_sale_center (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleCenterMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_center;"
 
+	InsertInvoiceToSaleTypeSelectMaxIdQuery = "INSERT INTO invoice_to_sale_type_select (i_id, created_at) VALUES(?, ?);"
+	GetInvoiceToSaleTypeSelectMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_type_select;"
+
 	InsertTreasuriesMaxIdQuery = "INSERT INTO treasuries (t_id, created_at) VALUES(?, ?);"
 	GetTreasuriesMaxIdQuery    = "SELECT Max(t_id) FROM treasuries;"
 
-	InsertRevertedMaxIdQuery = "INSERT INTO reverted (r_id, created_at) VALUES(?, ?);"
-	GetRevertedMaxIdQuery    = "SELECT Max(r_id) FROM reverted;"
+	InsertInvoiceReturnMaxIdQuery = "INSERT INTO invoice_return (r_id, created_at) VALUES(?, ?);"
+	GetInvoiceReturnMaxIdQuery    = "SELECT Max(r_id) FROM invoice_return;"
 )
 
 type DatabaseInterface interface {
@@ -66,11 +69,14 @@ type DatabaseInterface interface {
 	InsertInvoiceToSaleCenter(i_id int) error
 	GetInvoiceToSaleCenter() (int, error)
 
+	InsertInvoiceToSaleTypeSelect(i_id int) error
+	GetInvoiceToSaleTypeSelect() (int, error)
+
 	InsertTreasuries(t_id int) error
 	GetTreasuries() (int, error)
 
-	InsertReverted(r_id int) error
-	GetReverted() (int, error)
+	InsertInvoiceReturn(r_id int) error
+	GetInvoiceReturn() (int, error)
 }
 
 type Database struct {
@@ -288,6 +294,40 @@ func (d *Database) GetInvoiceToSaleProforma() (int, error) {
 	return id, err
 }
 
+// InsertInvoiceToSaleTypeSelect implements DatabaseInterface
+func (d *Database) InsertInvoiceToSaleTypeSelect(i_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceToSaleTypeSelectMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetInvoiceToSaleTypeSelect implements DatabaseInterface
+func (d *Database) GetInvoiceToSaleTypeSelect() (int, error) {
+	var id int
+	var maxId sql.NullInt64
+	err := d.sdb.QueryRow(GetInvoiceToSaleTypeSelectMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleTypeSelect %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleTypeSelect %w %v ", err, maxId)
+		}
+	}
+
+	return id, err
+}
+
 // InsertInvoiceToSaleCenter implements DatabaseInterface
 func (d *Database) InsertInvoiceToSaleCenter(i_id int) error {
 	_, err := d.sdb.Exec(InsertInvoiceToSaleCenterMaxIdQuery, i_id, time.Now())
@@ -313,9 +353,9 @@ func (d *Database) GetInvoiceToSaleCenter() (int, error) {
 			}
 		case sql.ErrConnDone, sql.ErrTxDone:
 			log.Printf("Database connection or transaction error: %v", err)
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleProforma %w %v ", err, maxId)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleCenter %w %v ", err, maxId)
 		default:
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleProforma %w %v ", err, maxId)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleCenter %w %v ", err, maxId)
 		}
 	}
 
@@ -346,11 +386,11 @@ func (d *Database) GetProductsToGoods() (int, error) {
 	return id, err
 }
 
-// GetReverted implements DatabaseInterface
-func (d *Database) GetReverted() (int, error) {
+// GetInvoiceReturn implements DatabaseInterface
+func (d *Database) GetInvoiceReturn() (int, error) {
 	var id int
 	var maxId sql.NullInt64
-	err := d.sdb.QueryRow(GetRevertedMaxIdQuery).Scan(&maxId)
+	err := d.sdb.QueryRow(GetInvoiceReturnMaxIdQuery).Scan(&maxId)
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -361,9 +401,9 @@ func (d *Database) GetReverted() (int, error) {
 			}
 		case sql.ErrConnDone, sql.ErrTxDone:
 			log.Printf("Database connection or transaction error: %v", err)
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetReverted %w %v ", err, maxId)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceReturn %w %v ", err, maxId)
 		default:
-			return id, fmt.Errorf("@ERP.repository.databese.databese.GetReverted %w %v ", err, maxId)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceReturn %w %v ", err, maxId)
 		}
 	}
 
@@ -404,9 +444,9 @@ func (d *Database) InsertProductsToGoods(p_id int) error {
 	return nil
 }
 
-// InsertReverted implements DatabaseInterface
-func (d *Database) InsertReverted(r_id int) error {
-	_, err := d.sdb.Exec(InsertRevertedMaxIdQuery, r_id)
+// InsertInvoiceReturn implements DatabaseInterface
+func (d *Database) InsertInvoiceReturn(r_id int) error {
+	_, err := d.sdb.Exec(InsertInvoiceReturnMaxIdQuery, r_id)
 	if err != nil {
 		return err
 	}
