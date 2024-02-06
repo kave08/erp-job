@@ -82,7 +82,14 @@ func (i *Invoice) Invoices() error {
 		fmt.Println("Load SyncInvoicesWithSaleProforma encountered an error", err.Error())
 		return err
 	}
+
 	err = i.fararavand.SyncInvoicesWithSaleCenter(newInvoices)
+	if err != nil {
+		fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
+		return err
+	}
+
+	err = i.fararavand.SyncInvoiceWithSaleTypeSelect(newInvoices)
 	if err != nil {
 		fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
 		return err
