@@ -37,7 +37,7 @@ func NewSync(repos *repository.Repository, fr fararavand.FararavandInterface, ar
 }
 
 func (s *Sync) Sync() error {
-	BaseData(s.repos, s.fararavand, s.aryan)
+	NewBaseData(s.repos, s.fararavand, s.aryan, s.httpClient.Timeout)
 	NewCustomer(s.repos, s.fararavand, s.aryan, s.httpClient.Timeout)
 	NewInvoice(s.repos, s.fararavand, s.aryan, s.httpClient.Timeout)
 	NewInvoiceReturn(s.repos, s.fararavand, s.aryan, s.httpClient.Timeout)
