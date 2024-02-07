@@ -37,6 +37,9 @@ const (
 	InsertInvoiceToSaleTypeSelectMaxIdQuery = "INSERT INTO invoice_to_sale_type_select (i_id, created_at) VALUES(?, ?);"
 	GetInvoiceToSaleTypeSelectMaxIdQuery    = "SELECT Max(i_id) FROM invoice_to_sale_type_select;"
 
+	InsertBaseDataToDeliverCenterMaxIdQuery = "INSERT INTO base_data_to_deliver_center (i_id, created_at) VALUES(?, ?);"
+	GetBaseDataToDeliverCentertMaxIdQuery   = "SELECT Max(i_id) FROM base_data_to_deliver_center;"
+
 	InsertTreasuriesMaxIdQuery = "INSERT INTO treasuries (t_id, created_at) VALUES(?, ?);"
 	GetTreasuriesMaxIdQuery    = "SELECT Max(t_id) FROM treasuries;"
 
@@ -71,6 +74,9 @@ type DatabaseInterface interface {
 
 	InsertInvoiceToSaleTypeSelect(i_id int) error
 	GetInvoiceToSaleTypeSelect() (int, error)
+
+	InsertBaseDataToDeliverCenter(i_id int) error
+	GetBaseDataToDeliverCenter() (int, error)
 
 	InsertTreasuries(t_id int) error
 	GetTreasuries() (int, error)
@@ -356,6 +362,40 @@ func (d *Database) GetInvoiceToSaleCenter() (int, error) {
 			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleCenter %w %v ", err, maxId)
 		default:
 			return id, fmt.Errorf("@ERP.repository.databese.databese.GetInvoiceToSaleCenter %w %v ", err, maxId)
+		}
+	}
+
+	return id, err
+}
+
+// InsertBaseDataToDeliverCenter implements DatabaseInterface
+func (d *Database) InsertBaseDataToDeliverCenter(i_id int) error {
+	_, err := d.sdb.Exec(InsertBaseDataToDeliverCenterMaxIdQuery, i_id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetBaseDataToDeliverCenter implements DatabaseInterface
+func (d *Database) GetBaseDataToDeliverCenter() (int, error) {
+	var id int
+	var maxId sql.NullInt64
+	err := d.sdb.QueryRow(GetBaseDataToDeliverCentertMaxIdQuery).Scan(&maxId)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			if maxId.Valid {
+				id = int(maxId.Int64)
+			} else {
+				id = 0
+			}
+		case sql.ErrConnDone, sql.ErrTxDone:
+			log.Printf("Database connection or transaction error: %v", err)
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetBaseDataToDeliverCenter %w %v ", err, maxId)
+		default:
+			return id, fmt.Errorf("@ERP.repository.databese.databese.GetBaseDataToDeliverCenter %w %v ", err, maxId)
 		}
 	}
 
