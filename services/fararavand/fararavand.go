@@ -311,6 +311,40 @@ func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) e
 	return nil
 }
 
+// SyncBaseDataWithDeliverCenter retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
+// It fetches the invoices using the Fararavand API, then checks the database for the last invoice ID that was transferred to the Aryan system.
+// If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalerSelect method.
+// The function returns a slice of new invoices and an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) error {
+
+	paymentType := baseData.PaymentTypes
+
+	lastInvoiceId := paymentType[len(paymentType)-1].ID
+
+	lastSalerSelectId, err := f.repos.Database.GetBaseDataToDeliverCenter()
+	if err != nil {
+		return err
+	}
+
+	if lastInvoiceId > lastSalerSelectId {
+		paymentType = paymentType[lastSalerSelectId:]
+		baseData := models.BaseData{
+			PaymentTypes: paymentType,
+		}
+		res, err := f.aryan.PostBaseDataToDeliverCenterSaleSelect(baseData)
+		if res.StatusCode() == http.StatusOK {
+			err = f.repos.Database.InsertBaseDataToDeliverCenter(lastInvoiceId)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	}
+
+	return nil
+}
+
 // GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) SyncTreasuries(treasuries []models.Treasuries) error {
 
