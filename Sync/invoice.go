@@ -1,18 +1,24 @@
 package sync
 
 import (
+	"context"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
-	"erp-job/utility"
-	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
+	"erp-job/helpers"
+
 	"github.com/labstack/echo/v4"
+)
+
+const (
+	handleGetInvoiceEndpoint = "GetInvoices"
 )
 
 type InvoiceRequest struct {
@@ -68,8 +74,21 @@ func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface,
 	}
 }
 
-func (i *Invoice) Invoices() func(c echo.Context) error {
+func (cl *client) Invoices(ctx context.Context, inoviceId int) func(c echo.Context) error {
 	return func(c echo.Context) error {
+
+		url := helpers.EncodeURLParams(cl.baseURL+handleGetInvoiceEndpoint, map[string]string{
+			"inovice_id": strconv.Itoa(inoviceId),
+		})
+
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			return err
+		}
+
+		response := new(InvoiceResponse)
+
+		err = cl.call(req, response)
 
 		request := new(InvoiceRequest)
 
@@ -91,57 +110,57 @@ func (i *Invoice) Invoices() func(c echo.Context) error {
 			return c.JSON(http.StatusBadRequest, NewInvoiceResponse(http.StatusBadRequest, "validation.required"))
 		}
 
-		i.e.GET(utility.FGetInvoices+"/:id", func(c echo.Context) error {
-			id := c.Param("latest_id")
-			return c.String(http.StatusOK, "User ID: "+id)
-		})
+		// i.e.GET(handleGetInvoiceEndpoint+"/:id", func(c echo.Context) error {
+		// 	id := c.Param("latest_id")
+		// 	return c.String(http.StatusOK, "User ID: "+id)
+		// })
 
-		if i.e.AcquireContext().Response().Status != http.StatusOK {
-			log.Printf("status code: %d", i.e.AcquireContext().Response().Status)
-			return fmt.Errorf(utility.ErrNotOk)
-		}
+		// if i.e.AcquireContext().Response().Status != http.StatusOK {
+		// 	log.Printf("status code: %d", i.e.AcquireContext().Response().Status)
+		// 	return fmt.Errorf(utility.ErrNotOk)
+		// }
 
-		err := i.fararavand.SyncInvoicesWithSaleFactor(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSaleFactor encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSaleFactor(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSaleFactor encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoicesWithSaleOrder(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSaleOrder encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSaleOrder(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSaleOrder encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoicesWithSalePayment(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSalePayment encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSalePayment(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSalePayment encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoicesWithSalerSelect(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSalerSelect encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSalerSelect(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSalerSelect encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoicesWithSaleProforma(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSaleProforma encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSaleProforma(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSaleProforma encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoicesWithSaleCenter(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoicesWithSaleCenter(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
+		// 	return err
+		// }
 
-		err = i.fararavand.SyncInvoiceWithSaleTypeSelect(request.Invoices)
-		if err != nil {
-			fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
-			return err
-		}
+		// err = i.fararavand.SyncInvoiceWithSaleTypeSelect(request.Invoices)
+		// if err != nil {
+		// 	fmt.Println("Load SyncInvoicesWithSaleCenter encountered an error", err.Error())
+		// 	return err
+		// }
 
 		return nil
 	}
