@@ -32,30 +32,12 @@ func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) Far
 	}
 }
 
-// SyncBaseData gets all base information from the first ERP
-func (f *Fararavand) SyncBaseData() error {
-	var newData = new(models.Fararavand)
 
-	resp, err := f.restyClient.R().
-		SetResult(newData).
-		Get(utility.FGetBaseData)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
-	}
-
-	return nil
-}
-
-// SyncCustomersWithSaleCustomer retrieves all customer data from the Fararavand ERP system and filters them based on the last processed customer ID.
-// It fetches the customers using the Fararavand API, then checks the database for the last customer ID that was transferred to the Aryan system.
-// If new customers are found (customer with an ID greater than the last processed ID), it sends them to the Aryan system using the PostCustomerToSaleCustomer method.
-// The function returns a slice of new customers and an error if any occurs during the process.
-// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+// SyncBaseDataWithDeliverCenter retrieves all base data from the Fararavand ERP system and filters them based on the last processed payment type ID.
+// It fetches the base data using the Fararavand API, then checks the database for the last payment type ID that was transferred to the Aryan system.
+// If new payment types are found (payment types with an ID greater than the last processed ID), it sends them to the Aryan system using the PostBaseDataToDeliverCenterSaleSelect method.
+// The function returns an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP  200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers) error {
 
 	lastCustomerId := customers[len(customers)-1].ID
@@ -82,8 +64,8 @@ func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers)
 // SyncProductsWithGoods retrieves all product data from the Fararavand ERP system and filters them based on the last processed product ID.
 // It fetches the products using the Fararavand API, then checks the database for the last product ID that was transferred to the Aryan system.
 // If new products are found (products with an ID greater than the last processed ID), it sends them to the Aryan system using the PostProductsToGoods method.
-// The function returns a slice of new products and an error if any occurs during the process.
-// If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
+// The function returns an error if any occurs during the process.
+// If the response status code from the Fararavand API is not HTTP  200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 
 	lastProductId := products[len(products)-1].ID
@@ -390,6 +372,25 @@ func (f *Fararavand) SyncInvoiceReturns(invoiceReturn []models.InvoiceReturn) er
 		// 	}
 		// }
 		return err
+	}
+
+	return nil
+}
+
+// SyncBaseData gets all base information from the first ERP
+func (f *Fararavand) SyncBaseData() error {
+	var newData = new(models.Fararavand)
+
+	resp, err := f.restyClient.R().
+		SetResult(newData).
+		Get(utility.FGetBaseData)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		log.Printf("status code: %d", resp.StatusCode())
+		return fmt.Errorf(utility.ErrNotOk)
 	}
 
 	return nil
