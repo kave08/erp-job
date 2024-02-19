@@ -83,7 +83,7 @@ func (i *Invoice) Invoices() error {
 	}
 
 	if res.StatusCode != response.Status {
-		return fmt.Errorf("driver profile http request failed(body). status: %d, response: %v", response.Status, res.Body)
+		return fmt.Errorf("get invoice http request failed(body). status: %d, response: %v", response.Status, res.Body)
 	}
 
 	if res.StatusCode != http.StatusOK {
