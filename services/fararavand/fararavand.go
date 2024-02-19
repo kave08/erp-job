@@ -32,7 +32,6 @@ func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) Far
 	}
 }
 
-
 // SyncBaseDataWithDeliverCenter retrieves all base data from the Fararavand ERP system and filters them based on the last processed payment type ID.
 // It fetches the base data using the Fararavand API, then checks the database for the last payment type ID that was transferred to the Aryan system.
 // If new payment types are found (payment types with an ID greater than the last processed ID), it sends them to the Aryan system using the PostBaseDataToDeliverCenterSaleSelect method.
@@ -77,13 +76,13 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 
 	if lastProductId > lastGoodsId {
 		products = products[lastGoodsId:]
-		res, err := f.aryan.PostProductsToGoods(products)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertProductsToGoods(lastProductId)
-			if err != nil {
-				return err
-			}
+		err := f.aryan.PostProductsToGoods(products)
+
+		err = f.repos.Database.InsertProductsToGoods(lastProductId)
+		if err != nil {
+			return err
 		}
+
 		return err
 	}
 
