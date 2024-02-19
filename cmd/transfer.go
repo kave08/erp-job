@@ -28,7 +28,7 @@ func transfer() {
 
 	repos := repository.NewRepository(mdb.MysqlConnection)
 
-	ar := aryan.NewAryan(repos)
+	ar := aryan.NewAryan(repos, timeout)
 	fr := fararavand.NewFararavand(repos, ar)
 
 	sync.NewSync(repos, fr, ar, timeout)
