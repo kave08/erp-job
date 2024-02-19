@@ -82,7 +82,7 @@ func (p Product) Products() error {
 	}
 
 	if res.StatusCode != response.Status {
-		return fmt.Errorf("driver profile http request failed(body). status: %d, response: %v", response.Status, res.Body)
+		return fmt.Errorf("get products http request failed(body). status: %d, response: %v", response.Status, res.Body)
 	}
 
 	if res.StatusCode != http.StatusOK {
@@ -92,7 +92,7 @@ func (p Product) Products() error {
 
 	err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
 	if err != nil {
-		return fmt.Errorf("load SyncProductsWithGoods encountered an error : %w", err)
+		return fmt.Errorf("load SyncProductsWithGoods encountered an error: %w", err)
 	}
 
 	return nil
