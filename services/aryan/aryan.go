@@ -1,24 +1,29 @@
 package aryan
 
 import (
+	"bytes"
+	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/utility"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
 type Aryan struct {
 	restyClient *resty.Client
+	httpClient  *http.Client
 	baseUrl     string
 	repos       *repository.Repository
 }
 
-func NewAryan(repos *repository.Repository) AryanInterface {
+func NewAryan(repos *repository.Repository, requestTimeout time.Duration) AryanInterface {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.AryanApp.APIKey).SetBaseURL(config.Cfg.AryanApp.BaseURL)
 
@@ -26,6 +31,9 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 		restyClient: c,
 		baseUrl:     config.Cfg.AryanApp.BaseURL,
 		repos:       repos,
+		httpClient: &http.Client{
+			Timeout: requestTimeout,
+		},
 	}
 }
 
@@ -68,10 +76,12 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 }
 
 // PostProductsToGoods takes a slice of Products and posts them to the goods service.
-// It converts each Product into a Goods structure by mapping relevant fields.
-// The function then makes a POST request to the goods service endpoint with the slice of Goods as the request body.
-// The function returns the server response and an error if the request fails.
-func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, error) {
+// It converts each Product into a Goods by copying the ID, Code, and Name fields,
+// and setting the GroupId to the FirstProductGroupID. All other fields are set to  0.
+// The function then creates a new HTTP POST request with the JSON-encoded slice of Goods
+// as the request body and sends it to the goods service endpoint.
+// If the request is successful and the response status code is OK, the function returns nil.
+func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 	var newGoods []models.Goods
 
 	for _, item := range fp {
@@ -88,16 +98,30 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) (*resty.Response, erro
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newGoods).Post(utility.AGoods)
+	body, err := json.Marshal(newGoods)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.AGoods, bytes.NewReader(body))
+	if err != nil {
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostCustomerToSaleCustomer takes a slice of Customers and posts them to the sale customer service.
