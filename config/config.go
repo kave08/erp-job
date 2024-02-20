@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
@@ -17,16 +18,18 @@ type config struct {
 	Database      Database      `yaml:"DATABASE"`
 }
 type AryanApp struct {
-	BaseURL  string `yaml:"BASE_URL"`
-	APIKey   string `yaml:"API_KEY"`
-	UserName string `yaml:"UserName"`
-	Pass     string `yaml:"Pass"`
+	BaseURL  string        `yaml:"BASE_URL"`
+	APIKey   string        `yaml:"API_KEY"`
+	UserName string        `yaml:"UserName"`
+	Pass     string        `yaml:"Pass"`
+	Timeout  time.Duration `yaml:"TIMEOUT"`
 }
 type FararavandApp struct {
-	BaseURL  string `yaml:"BASE_URL"`
-	APIKey   string `yaml:"API_KEY"`
-	UserName string `yaml:"USER_NAME"`
-	Pass     string `yaml:"PASSWORD"`
+	BaseURL  string        `yaml:"BASE_URL"`
+	APIKey   string        `yaml:"API_KEY"`
+	UserName string        `yaml:"USER_NAME"`
+	Pass     string        `yaml:"PASSWORD"`
+	Timeout  time.Duration `yaml:"TIMEOUT"`
 }
 
 type Database struct {
