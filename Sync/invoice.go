@@ -11,28 +11,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"sync"
 )
+
+var lastId int
+var pageNumber int
+var pageSize int = 1000
+var mutex *sync.Mutex
 
 // InvoiceResponse is the response for the invoice
 type InvoiceResponse struct {
 	Status      int               `json:"status"`
 	NewInvoices []models.Invoices `json:"new_invoice"`
-}
-
-type InvoiceRequest struct {
-	LastId      int `json:"LastId"`
-	PageSize    int `json:"PageSize"`
-	PageNumeber int `json:"PageNumeber"`
-}
-
-// NewInvoiceRequest is the InvoiceResponse factory method
-func NewInvoiceRequest(lastid int, pageSize int, pageNumber int) ProductRequest {
-	return ProductRequest{
-		LastId:      lastid,
-		PageSize:    pageSize,
-		PageNumeber: pageNumber,
-	}
 }
 
 type Invoice struct {
@@ -43,24 +33,22 @@ type Invoice struct {
 	fararavand fararavand.FararavandInterface
 }
 
-func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Invoice {
+func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Invoice {
 	return &Invoice{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
 		fararavand: fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }
 
 func (i *Invoice) Invoices() error {
 
-	request := new(InvoiceRequest)
-
 	req, err := http.NewRequest(http.MethodGet, i.baseURL+
-		fmt.Sprintf("/GetInvoices?PageNumeber=%d&PageSize=%d&LastId=%d/", request.PageNumeber, request.PageSize, request.LastId), nil)
+		fmt.Sprintf("/GetInvoices?PageNumeber=%d&PageSize=%d&LastId=%d/", pageNumber, pageSize, lastId), nil)
 	if err != nil {
 		return err
 	}
@@ -91,9 +79,9 @@ func (i *Invoice) Invoices() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	if request.LastId <= 0 {
-		return fmt.Errorf("validation.required %d", http.StatusBadRequest)
-	}
+	// if lastId <= 0 {
+	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
+	// }
 
 	err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
 	if err != nil {
