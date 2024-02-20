@@ -65,28 +65,32 @@ func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers)
 // If new products are found (products with an ID greater than the last processed ID), it sends them to the Aryan system using the PostProductsToGoods method.
 // The function returns an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP  200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
+func (f *Fararavand) SyncProductsWithGoods(products []models.Products) (int, error) {
 
 	lastProductId := products[len(products)-1].ID
 
 	lastGoodsId, err := f.repos.Database.GetProductsToGoods()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if lastProductId > lastGoodsId {
-		products = products[lastGoodsId:]
-		err := f.aryan.PostProductsToGoods(products)
-
-		err = f.repos.Database.InsertProductsToGoods(lastProductId)
-		if err != nil {
-			return err
+		for index, product := range products {
+			if product.ID > lastGoodsId {
+				products = products[index:]
+				break
+			}
 		}
-
-		return err
 	}
 
-	return nil
+	err = f.aryan.PostProductsToGoods(products)
+
+	err = f.repos.Database.InsertProductsToGoods(lastProductId)
+	if err != nil {
+		return 0, err
+	}
+	
+	return lastProductId, err
 }
 
 // SyncInvoicesWithSaleFactor retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.

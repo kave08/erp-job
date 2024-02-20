@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -24,7 +23,7 @@ type Customer struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Customer {
+func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Customer {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
@@ -35,7 +34,7 @@ func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface
 		aryan:       ar,
 		fararavand:  fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }

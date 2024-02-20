@@ -1,5 +1,7 @@
 package sync
 
+//rename pkg name
+
 import (
 	"encoding/json"
 	"erp-job/config"
@@ -11,26 +13,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"sync"
 )
+
+var productLastId int
+var productPageNumber int
+var productPageSize int = 1000
+var productMutex *sync.Mutex
 
 type ProductResponse struct {
 	Status      int               `json:"status"`
 	NewProducts []models.Products `json:"new_products"`
-}
-
-type ProductRequest struct {
-	LastId      int `json:"LastId"`
-	PageSize    int `json:"PageSize"`
-	PageNumeber int `json:"PageNumeber"`
-}
-
-func NewProductRequest(lastid int, pageSize int, pageNumber int) ProductRequest {
-	return ProductRequest{
-		LastId:      lastid,
-		PageSize:    pageSize,
-		PageNumeber: pageNumber,
-	}
 }
 
 type Product struct {
@@ -41,7 +34,7 @@ type Product struct {
 	fararavand fararavand.FararavandInterface
 }
 
-func NewProduct(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Product {
+func NewProduct(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Product {
 
 	return &Product{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
@@ -49,17 +42,23 @@ func NewProduct(repos *repository.Repository, fr fararavand.FararavandInterface,
 		aryan:      ar,
 		fararavand: fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }
 
+func IncerPageNumber() {
+	mutex.Lock()
+
+	pageNumber = pageNumber + pageSize
+
+	mutex.Unlock()
+}
+
 func (p Product) Products() error {
 
-	request := new(ProductRequest)
-
 	req, err := http.NewRequest(http.MethodGet, p.baseURL+
-		fmt.Sprintf("/GetProducts?PageNumeber=%d&PageSize=%d&LastId=%d/", request.PageNumeber, request.PageSize, request.LastId), nil)
+		fmt.Sprintf(GetProducts, pageNumber, pageSize, lastId), nil)
 	if err != nil {
 		return err
 	}
@@ -81,19 +80,18 @@ func (p Product) Products() error {
 		return err
 	}
 
-	if res.StatusCode != response.Status {
-		return fmt.Errorf("get products http request failed(body). status: %d, response: %v", response.Status, res.Body)
-	}
-
+	//TODO: fix error
 	if res.StatusCode != http.StatusOK {
 		log.Printf("status code: %d", res.StatusCode)
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
+	lastId, err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
 	if err != nil {
 		return fmt.Errorf("load SyncProductsWithGoods encountered an error: %w", err)
 	}
+
+	IncerPageNumber()
 
 	return nil
 }

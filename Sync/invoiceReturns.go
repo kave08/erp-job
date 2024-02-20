@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -24,7 +23,7 @@ type InvoiceReturn struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *InvoiceReturn {
+func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *InvoiceReturn {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
@@ -35,7 +34,7 @@ func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInte
 		aryan:       ar,
 		fararavand:  fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }
