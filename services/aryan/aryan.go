@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -23,7 +22,7 @@ type Aryan struct {
 	repos       *repository.Repository
 }
 
-func NewAryan(repos *repository.Repository, requestTimeout time.Duration) AryanInterface {
+func NewAryan(repos *repository.Repository) AryanInterface {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.AryanApp.APIKey).SetBaseURL(config.Cfg.AryanApp.BaseURL)
 
@@ -32,7 +31,7 @@ func NewAryan(repos *repository.Repository, requestTimeout time.Duration) AryanI
 		baseUrl:     config.Cfg.AryanApp.BaseURL,
 		repos:       repos,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.AryanApp.Timeout,
 		},
 	}
 }
