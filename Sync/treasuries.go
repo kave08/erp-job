@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -24,7 +23,7 @@ type Treasurie struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *Treasurie {
+func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Treasurie {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
@@ -35,7 +34,7 @@ func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterfac
 		aryan:       ar,
 		fararavand:  fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }
