@@ -1,4 +1,4 @@
-package sync
+package syncdata
 
 import (
 	"erp-job/config"
