@@ -11,28 +11,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"sync"
 )
+
+var baseDataLastId int
+var baseDataPageNumber int
+var baseDataPageSize int = 1000
+var baseDataMutex *sync.Mutex
 
 // BaseDataResponse is the response for the BaseData
 type BaseDataResponse struct {
 	Status      int             `json:"status"`
 	NewBaseData models.BaseData `json:"new_base_data"`
-}
-
-type BaseDataRequest struct {
-	LastId      int `json:"LastId"`
-	PageSize    int `json:"PageSize"`
-	PageNumeber int `json:"PageNumeber"`
-}
-
-// NewBaseDataRequest is the BaseDataResponse factory method
-func NewBaseDataRequest(lastid int, pageSize int, pageNumber int) ProductRequest {
-	return ProductRequest{
-		LastId:      lastid,
-		PageSize:    pageSize,
-		PageNumeber: pageNumber,
-	}
 }
 
 type BaseData struct {
@@ -43,24 +33,22 @@ type BaseData struct {
 	fararavand fararavand.FararavandInterface
 }
 
-func NewBaseData(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface, requestTimeout time.Duration) *BaseData {
+func NewBaseData(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *BaseData {
 	return &BaseData{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
 		fararavand: fr,
 		httpClient: &http.Client{
-			Timeout: requestTimeout,
+			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
 	}
 }
 
 func (b *BaseData) BaseData() error {
 
-	request := new(BaseDataRequest)
-
 	req, err := http.NewRequest(http.MethodGet, b.baseURL+
-		fmt.Sprintf("/GetBaseData?PageNumeber=%d&PageSize=%d&LastId=%d/", request.PageNumeber, request.PageSize, request.LastId), nil)
+		fmt.Sprintf("/GetBaseData?PageNumeber=%d&PageSize=%d&LastId=%d/", baseDataPageNumber, baseDataPageSize, baseDataLastId), nil)
 	if err != nil {
 		return err
 	}
@@ -91,9 +79,9 @@ func (b *BaseData) BaseData() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	if request.LastId <= 0 {
-		return fmt.Errorf("validation.required %d", http.StatusBadRequest)
-	}
+	// if request.LastId <= 0 {
+	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
+	// }
 
 	err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
 	if err != nil {
