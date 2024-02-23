@@ -4,7 +4,7 @@ import "erp-job/models"
 
 type FararavandInterface interface {
 	SyncBaseData() error
-	SyncCustomersWithSaleCustomer(customers []models.Customers) error
+	SyncCustomersWithSaleCustomer(customers []models.Customers) (int, error)
 	SyncProductsWithGoods(products []models.Products) (int, error)
 	SyncInvoicesWithSaleFactor(invoices []models.Invoices) error
 	SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
