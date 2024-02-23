@@ -53,7 +53,7 @@ func (c Customer) Customers() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	err = c.fararavand.SyncCustomersWithSaleCustomer(newCustomers)
+	lastId, err = c.fararavand.SyncCustomersWithSaleCustomer(newCustomers)
 	if err != nil {
 		fmt.Println("Load SyncCustomersWithSaleCustomer encountered an error", err.Error())
 		return err
