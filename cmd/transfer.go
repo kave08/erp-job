@@ -5,7 +5,7 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
-	"erp-job/sync"
+	syncdata "erp-job/sync_data"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,7 @@ func transfer() {
 	ar := aryan.NewAryan(repos)
 	fr := fararavand.NewFararavand(repos, ar)
 
-	sync.NewSync(repos, fr, ar)
+	syncdata.NewSync(repos, fr, ar)
 
 }
 

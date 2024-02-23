@@ -1,4 +1,4 @@
-package sync
+package syncdata
 
 import (
 	"erp-job/config"
@@ -14,7 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type Customer struct {
+type InvoiceReturn struct {
 	restyClient *resty.Client
 	baseURL     string
 	httpClient  *http.Client
@@ -23,11 +23,11 @@ type Customer struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Customer {
+func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *InvoiceReturn {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	return &Customer{
+	return &InvoiceReturn{
 		restyClient: c,
 		baseURL:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
@@ -39,11 +39,10 @@ func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface
 	}
 }
 
-func (c Customer) Customers() error {
+func (i *InvoiceReturn) InvoiceReturns() error {
+	var newInvoiceReturn []models.InvoiceReturn
 
-	var newCustomers []models.Customers
-
-	resp, err := c.restyClient.R().SetResult(newCustomers).Get(utility.FGetCustomers)
+	resp, err := i.restyClient.R().SetResult(newInvoiceReturn).Get(utility.FGetInvoiceReturns)
 	if err != nil {
 		return err
 	}
@@ -53,10 +52,9 @@ func (c Customer) Customers() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	err = c.fararavand.SyncCustomersWithSaleCustomer(newCustomers)
+	err = i.fararavand.SyncInvoiceReturns(newInvoiceReturn)
 	if err != nil {
-		fmt.Println("Load SyncCustomersWithSaleCustomer encountered an error", err.Error())
-		return err
+		fmt.Println("Load SyncInvoiceReturns encountered an error", err.Error())
 	}
 
 	return nil

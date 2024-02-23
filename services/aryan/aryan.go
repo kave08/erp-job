@@ -127,7 +127,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 // It converts each Customer into a SaleCustomer by copying the ID and converting the Code to a string.
 // The function then makes a POST request to the sale customer service endpoint with the slice of SaleCustomers as the request body.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Response, error) {
+func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 	var newSaleCustomer []models.SaleCustomer
 
 	for _, item := range fc {
@@ -139,14 +139,14 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Respon
 
 	res, err := a.restyClient.R().SetBody(newSaleCustomer).Post(utility.ASaleCustomer)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if res.StatusCode() != http.StatusOK {
 		fmt.Println(res.Body())
 	}
 
-	return res, nil
+	return nil
 }
 
 // PostInvoiceToSaleOrder takes a slice of Invoices and posts them to the sale order service.

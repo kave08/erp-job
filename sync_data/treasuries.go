@@ -1,4 +1,4 @@
-package sync
+package syncdata
 
 import (
 	"erp-job/config"
@@ -14,7 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type InvoiceReturn struct {
+type Treasurie struct {
 	restyClient *resty.Client
 	baseURL     string
 	httpClient  *http.Client
@@ -23,11 +23,11 @@ type InvoiceReturn struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *InvoiceReturn {
+func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Treasurie {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	return &InvoiceReturn{
+	return &Treasurie{
 		restyClient: c,
 		baseURL:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
@@ -39,10 +39,11 @@ func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInte
 	}
 }
 
-func (i *InvoiceReturn) InvoiceReturns() error {
-	var newInvoiceReturn []models.InvoiceReturn
+func (t *Treasurie) Treasuries() error {
 
-	resp, err := i.restyClient.R().SetResult(newInvoiceReturn).Get(utility.FGetInvoiceReturns)
+	var newTreasuries []models.Treasuries
+
+	resp, err := t.restyClient.R().SetResult(newTreasuries).Get(utility.FGetTreasuries)
 	if err != nil {
 		return err
 	}
@@ -52,9 +53,10 @@ func (i *InvoiceReturn) InvoiceReturns() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	err = i.fararavand.SyncInvoiceReturns(newInvoiceReturn)
+	err = t.fararavand.SyncTreasuries(newTreasuries)
 	if err != nil {
-		fmt.Println("Load SyncInvoiceReturns encountered an error", err.Error())
+		fmt.Println("Load SyncTreasuries encountered an error", err.Error())
+		return err
 	}
 
 	return nil

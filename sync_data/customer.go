@@ -1,4 +1,4 @@
-package sync
+package syncdata
 
 import (
 	"erp-job/config"
@@ -14,7 +14,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type Treasurie struct {
+type Customer struct {
 	restyClient *resty.Client
 	baseURL     string
 	httpClient  *http.Client
@@ -23,11 +23,11 @@ type Treasurie struct {
 	fararavand  fararavand.FararavandInterface
 }
 
-func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Treasurie {
+func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Customer {
 	c := resty.New().
 		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
 
-	return &Treasurie{
+	return &Customer{
 		restyClient: c,
 		baseURL:     config.Cfg.FararavandApp.BaseURL,
 		repos:       repos,
@@ -39,11 +39,11 @@ func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterfac
 	}
 }
 
-func (t *Treasurie) Treasuries() error {
+func (c Customer) Customers() error {
 
-	var newTreasuries []models.Treasuries
+	var newCustomers []models.Customers
 
-	resp, err := t.restyClient.R().SetResult(newTreasuries).Get(utility.FGetTreasuries)
+	resp, err := c.restyClient.R().SetResult(newCustomers).Get(utility.FGetCustomers)
 	if err != nil {
 		return err
 	}
@@ -53,9 +53,9 @@ func (t *Treasurie) Treasuries() error {
 		return fmt.Errorf(utility.ErrNotOk)
 	}
 
-	err = t.fararavand.SyncTreasuries(newTreasuries)
+	lastId, err = c.fararavand.SyncCustomersWithSaleCustomer(newCustomers)
 	if err != nil {
-		fmt.Println("Load SyncTreasuries encountered an error", err.Error())
+		fmt.Println("Load SyncCustomersWithSaleCustomer encountered an error", err.Error())
 		return err
 	}
 
