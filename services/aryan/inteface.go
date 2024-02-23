@@ -9,7 +9,7 @@ import (
 type AryanInterface interface {
 	PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, error)
 	PostProductsToGoods(fp []models.Products) error
-	PostCustomerToSaleCustomer(fc []models.Customers) (*resty.Response, error)
+	PostCustomerToSaleCustomer(fc []models.Customers) error
 	PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error)
 	PostInvoiceToSalePayment(fp []models.Invoices) (*resty.Response, error)
