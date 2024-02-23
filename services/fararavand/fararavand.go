@@ -37,27 +37,34 @@ func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) Far
 // If new payment types are found (payment types with an ID greater than the last processed ID), it sends them to the Aryan system using the PostBaseDataToDeliverCenterSaleSelect method.
 // The function returns an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP  200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers) error {
+func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers) (int, error) {
 
 	lastCustomerId := customers[len(customers)-1].ID
 	lastSaleCustomerId, err := f.repos.Database.GetCustomerToSaleCustomer()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if lastCustomerId > lastSaleCustomerId {
-		customers = customers[lastSaleCustomerId:]
-		res, err := f.aryan.PostCustomerToSaleCustomer(customers)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertCustomerToSaleCustomer(lastCustomerId)
-			if err != nil {
-				return err
+		for index, customer := range customers {
+			if customer.ID > lastSaleCustomerId {
+				customers = customers[index:]
+				break
 			}
 		}
-		return err
 	}
 
-	return nil
+	err = f.aryan.PostCustomerToSaleCustomer(customers)
+	if err != nil {
+		return 0, err
+	}
+
+	err = f.repos.Database.InsertCustomerToSaleCustomer(lastCustomerId)
+	if err != nil {
+		return 0, err
+	}
+
+	return lastCustomerId, err
 }
 
 // SyncProductsWithGoods retrieves all product data from the Fararavand ERP system and filters them based on the last processed product ID.
@@ -84,12 +91,15 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) (int, err
 	}
 
 	err = f.aryan.PostProductsToGoods(products)
+	if err != nil {
+		return 0, err
+	}
 
 	err = f.repos.Database.InsertProductsToGoods(lastProductId)
 	if err != nil {
 		return 0, err
 	}
-	
+
 	return lastProductId, err
 }
 
