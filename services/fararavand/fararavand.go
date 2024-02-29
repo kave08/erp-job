@@ -144,28 +144,36 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) (int
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleOrder method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error {
+func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) (int, error) {
 
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleOrderId, err := f.repos.Database.GetInvoiceToSaleOrder()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if lastInvoiceId > lastSaleOrderId {
-		invoices = invoices[lastSaleOrderId:]
-		res, err := f.aryan.PostInvoiceToSaleOrder(invoices)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoiceToSaleOrder(lastInvoiceId)
-			if err != nil {
-				return err
+		for index, invoice := range invoices {
+			if invoice.InvoiceId > lastInvoiceId {
+				invoices = invoices[index:]
+				break
 			}
 		}
-		return err
 	}
 
-	return nil
+	err = f.aryan.PostInvoiceToSaleOrder(invoices)
+	if err != nil {
+		return 0, err
+
+	}
+
+	err = f.repos.Database.InsertInvoiceToSaleOrder(lastInvoiceId)
+	if err != nil {
+		return 0, err
+	}
+
+	return lastInvoiceId, nil
 }
 
 // SyncInvoicesWithSalePayment retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
