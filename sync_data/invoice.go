@@ -83,7 +83,7 @@ func (i *Invoice) Invoices() error {
 	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
 	// }
 
-	err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
 		return err
