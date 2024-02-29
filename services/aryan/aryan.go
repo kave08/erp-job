@@ -40,7 +40,7 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 // Each Invoice is transformed into a SaleFactor by mapping its fields to the corresponding SaleFactor fields.
 // The function then sends a POST request with the slice of SaleFactors as the request body to the sale factor service.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
 
 	for _, item := range fp {
@@ -62,16 +62,31 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleFactor).Post(utility.ASaleFactor)
+	body, err := json.Marshal(newSaleFactor)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleFactor, bytes.NewReader(body))
+	if err != nil {
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+
+	return nil
 }
 
 // PostProductsToGoods takes a slice of Products and posts them to the goods service.
