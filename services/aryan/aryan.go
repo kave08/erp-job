@@ -85,7 +85,6 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
 	}
 
-
 	return nil
 }
 
@@ -168,7 +167,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 // It converts each Invoice into a SaleOrder by mapping its fields to the corresponding SaleOrder fields.
 // The function then sends a POST request with the slice of SaleOrders as the request body to the sale order service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 	var newSaleOrder []models.SaleOrder
 
 	for _, item := range fp {
@@ -190,16 +189,30 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleOrder).Post(utility.ASaleOrder)
+	body, err := json.Marshal(newSaleOrder)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleOrder, bytes.NewReader(body))
+	if err != nil {
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+	
+	return nil
 }
 
 // PostInvoiceToSaleCenter takes a slice of Invoices and posts them to the sale center service.
