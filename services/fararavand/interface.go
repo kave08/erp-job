@@ -8,7 +8,7 @@ type FararavandInterface interface {
 	SyncProductsWithGoods(products []models.Products) (int, error)
 	SyncInvoicesWithSaleFactor(invoices []models.Invoices) (int, error)
 	SyncInvoicesWithSaleOrder(invoices []models.Invoices) (int, error)
-	SyncInvoicesWithSalePayment(invoices []models.Invoices) error
+	SyncInvoicesWithSalePayment(invoices []models.Invoices) (int, error)
 	SyncInvoicesWithSalerSelect(invoices []models.Invoices) error
 	SyncInvoicesWithSaleProforma(invoices []models.Invoices) error
 	SyncInvoicesWithSaleCenter(invoices []models.Invoices) error
