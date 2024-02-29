@@ -95,7 +95,7 @@ func (i *Invoice) Invoices() error {
 		return err
 	}
 
-	err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
 		return err
