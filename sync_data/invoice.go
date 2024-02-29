@@ -83,19 +83,19 @@ func (i *Invoice) Invoices() error {
 	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
 	// }
 
-	err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
 		return err
 	}
 
-	err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSaleOrder encountered an error: %w", err)
 		return err
 	}
 
-	err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
 		return err

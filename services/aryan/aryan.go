@@ -40,7 +40,7 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 // Each Invoice is transformed into a SaleFactor by mapping its fields to the corresponding SaleFactor fields.
 // The function then sends a POST request with the slice of SaleFactors as the request body to the sale factor service.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
 
 	for _, item := range fp {
@@ -62,16 +62,30 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) (*resty.Response, 
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleFactor).Post(utility.ASaleFactor)
+	body, err := json.Marshal(newSaleFactor)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleFactor, bytes.NewReader(body))
+	if err != nil {
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostProductsToGoods takes a slice of Products and posts them to the goods service.
@@ -108,7 +122,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 		return err
 	}
 
-	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
 
 	res, err := a.httpClient.Do(req)
 	if err != nil {
@@ -153,7 +167,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 // It converts each Invoice into a SaleOrder by mapping its fields to the corresponding SaleOrder fields.
 // The function then sends a POST request with the slice of SaleOrders as the request body to the sale order service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 	var newSaleOrder []models.SaleOrder
 
 	for _, item := range fp {
@@ -175,16 +189,77 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) (*resty.Response, e
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleOrder).Post(utility.ASaleOrder)
+	body, err := json.Marshal(newSaleOrder)
 	if err != nil {
-		return nil, err
+
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleOrder, bytes.NewReader(body))
+	if err != nil {
+
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
+}
+
+// PostInvoiceToSalePayment takes a slice of Invoices and posts them to the sale payment select service.
+// It converts each Invoice into a SalePaymentSelect by mapping the PaymentTypeID and TxtNoePardakht fields.
+// The function then sends a POST request with the slice of SalePaymentSelect as the request body to the sale payment select service endpoint.
+// The function returns the server response and an error if the request fails.
+func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
+	var newSalePaymentSelect []models.SalePaymentSelect
+
+	for _, item := range fp {
+		newSalePaymentSelect = append(newSalePaymentSelect, models.SalePaymentSelect{
+			PaymentWayID:   item.PaymentTypeID,
+			PaymentwayDesc: item.TxtNoePardakht,
+		})
+	}
+
+	body, err := json.Marshal(newSalePaymentSelect)
+	if err != nil {
+
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASalePaymentSelect, bytes.NewReader(body))
+	if err != nil {
+
+		return err
+	}
+
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostInvoiceToSaleCenter takes a slice of Invoices and posts them to the sale center service.
@@ -203,32 +278,6 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 	}
 
 	res, err := a.restyClient.R().SetBody(newSaleCenter).Post(utility.ASaleCenter4SaleSelect)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
-	}
-
-	return res, nil
-}
-
-// PostInvoiceToSalePayment takes a slice of Invoices and posts them to the sale payment select service.
-// It converts each Invoice into a SalePaymentSelect by mapping the PaymentTypeID and TxtNoePardakht fields.
-// The function then sends a POST request with the slice of SalePaymentSelect as the request body to the sale payment select service endpoint.
-// The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) (*resty.Response, error) {
-	var newSalePaymentSelect []models.SalePaymentSelect
-
-	for _, item := range fp {
-		newSalePaymentSelect = append(newSalePaymentSelect, models.SalePaymentSelect{
-			PaymentWayID:   item.PaymentTypeID,
-			PaymentwayDesc: item.TxtNoePardakht,
-		})
-	}
-
-	res, err := a.restyClient.R().SetBody(newSalePaymentSelect).Post(utility.ASalePaymentSelect)
 	if err != nil {
 		return nil, err
 	}
