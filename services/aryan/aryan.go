@@ -293,7 +293,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, 
 // It converts each Invoice into a SalerSelect by mapping the VisitorCode and VisitorName fields.
 // The function then sends a POST request with the slice of SalerSelect as the request body to the saler select service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 	var newSalerSelect []models.SalerSelect
 
 	for _, item := range fp {
@@ -308,16 +308,34 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) (*resty.Response,
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSalerSelect).Post(utility.ASalerSelect)
+	body, err := json.Marshal(newSalerSelect)
 	if err != nil {
-		return nil, err
+
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASalerSelect, bytes.NewReader(body))
+	if err != nil {
+
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostInvoiceToSaleProforma takes a slice of Invoices and posts them to the sale proforma service.
