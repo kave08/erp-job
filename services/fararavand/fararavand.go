@@ -257,28 +257,39 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) (in
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleProforma method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) error {
+func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) (int, error) {
 
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleProforma()
 	if err != nil {
-		return err
+
+		return 0, err
 	}
 
 	if lastInvoiceId > lastSaleProformaId {
-		invoices = invoices[lastSaleProformaId:]
-		res, err := f.aryan.PostInvoiceToSaleProforma(invoices)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoiceToSaleProforma(lastInvoiceId)
-			if err != nil {
-				return err
+		for index, invoice := range invoices {
+			if invoice.InvoiceId > lastInvoiceId {
+				invoices = invoices[index:]
+				break
 			}
 		}
-		return err
+
+		err := f.aryan.PostInvoiceToSaleProforma(invoices)
+		if err != nil {
+
+			return 0, err
+		}
+
+		err = f.repos.Database.InsertInvoiceToSaleProforma(lastInvoiceId)
+		if err != nil {
+
+			return 0, err
+		}
+
 	}
 
-	return nil
+	return lastInvoiceId, nil
 }
 
 // SyncInvoicesWithSaleCenter retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
