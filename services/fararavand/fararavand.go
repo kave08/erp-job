@@ -5,30 +5,19 @@ import (
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
-	"erp-job/utility"
-	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/go-resty/resty/v2"
 )
 
 type Fararavand struct {
-	restyClient *resty.Client
-	baseUrl     string
-	repos       *repository.Repository
-	aryan       aryan.AryanInterface
+	baseUrl string
+	repos   *repository.Repository
+	aryan   aryan.AryanInterface
 }
 
 func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) FararavandInterface {
-	c := resty.New().
-		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
-
 	return &Fararavand{
-		restyClient: c,
-		baseUrl:     config.Cfg.FararavandApp.BaseURL,
-		repos:       repos,
-		aryan:       aryan,
+		baseUrl: config.Cfg.FararavandApp.BaseURL,
+		repos:   repos,
+		aryan:   aryan,
 	}
 }
 
@@ -297,28 +286,38 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) (i
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSaleProforma method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) error {
+func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) (int, error) {
 
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleCenter()
 	if err != nil {
-		return err
+
+		return 0, err
 	}
 
 	if lastInvoiceId > lastSaleProformaId {
-		invoices = invoices[lastSaleProformaId:]
-		res, err := f.aryan.PostInvoiceToSaleCenter(invoices)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoiceToSaleCenter(lastInvoiceId)
-			if err != nil {
-				return err
+		for index, invoice := range invoices {
+			if invoice.InvoiceId > lastInvoiceId {
+				invoices = invoices[index:]
+				break
 			}
 		}
-		return err
+
+		err := f.aryan.PostInvoiceToSaleCenter(invoices)
+		if err != nil {
+
+			return 0, err
+		}
+
+		err = f.repos.Database.InsertInvoiceToSaleCenter(lastInvoiceId)
+		if err != nil {
+
+			return 0, err
+		}
 	}
 
-	return nil
+	return lastInvoiceId, nil
 }
 
 // SyncInvoiceWithSaleTypeSelect retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
@@ -326,28 +325,39 @@ func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) erro
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalerSelect method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) error {
+func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) (int, error) {
 
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
 
 	lastSalerSelectId, err := f.repos.Database.GetInvoiceToSaleTypeSelect()
 	if err != nil {
-		return err
+
+		return 0, err
 	}
 
 	if lastInvoiceId > lastSalerSelectId {
-		invoices = invoices[lastSalerSelectId:]
-		res, err := f.aryan.PostInvoiceToSaleTypeSelect(invoices)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertInvoiceToSaleTypeSelect(lastInvoiceId)
-			if err != nil {
-				return err
+		for index, invoice := range invoices {
+			if invoice.InvoiceId > lastInvoiceId {
+				invoices = invoices[index:]
+				break
 			}
 		}
-		return err
+
+		err := f.aryan.PostInvoiceToSaleTypeSelect(invoices)
+		if err != nil {
+
+			return 0, err
+		}
+
+		err = f.repos.Database.InsertInvoiceToSaleTypeSelect(lastInvoiceId)
+		if err != nil {
+
+			return 0, err
+		}
+
 	}
 
-	return nil
+	return lastInvoiceId, nil
 }
 
 // SyncBaseDataWithDeliverCenter retrieves all invoices from the Fararavand ERP system and filters them based on the last processed invoice ID.
@@ -355,7 +365,7 @@ func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) e
 // If new invoices are found (invoices with an ID greater than the last processed ID), it sends them to the Aryan system using the PostInvoiceToSalerSelect method.
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
-func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) error {
+func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) (int, error) {
 
 	paymentType := baseData.PaymentTypes
 
@@ -363,48 +373,40 @@ func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) err
 
 	lastSalerSelectId, err := f.repos.Database.GetBaseDataToDeliverCenter()
 	if err != nil {
-		return err
+
+		return 0, err
 	}
 
 	if lastInvoiceId > lastSalerSelectId {
-		paymentType = paymentType[lastSalerSelectId:]
+		for index, invoice := range paymentType {
+			if invoice.ID > lastInvoiceId {
+				paymentType = paymentType[index:]
+				break
+			}
+		}
 		baseData := models.BaseData{
 			PaymentTypes: paymentType,
 		}
-		res, err := f.aryan.PostBaseDataToDeliverCenterSaleSelect(baseData)
-		if res.StatusCode() == http.StatusOK {
-			err = f.repos.Database.InsertBaseDataToDeliverCenter(lastInvoiceId)
-			if err != nil {
-				return err
-			}
+
+		err := f.aryan.PostBaseDataToDeliverCenterSaleSelect(baseData)
+		if err != nil {
+
+			return 0, err
 		}
-		return err
+
+		err = f.repos.Database.InsertBaseDataToDeliverCenter(lastInvoiceId)
+		if err != nil {
+
+			return 0, err
+		}
+
 	}
 
-	return nil
+	return lastInvoiceId, nil
 }
 
 // GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) SyncTreasuries(treasuries []models.Treasuries) error {
-
-	lastInvoiceId := treasuries[len(treasuries)-1].InvoiceID
-
-	lastSalerSelectId, err := f.repos.Database.GetTreasuries()
-	if err != nil {
-		return err
-	}
-
-	if lastInvoiceId > lastSalerSelectId {
-		treasuries = treasuries[lastSalerSelectId:]
-		// res, err := f.aryan.PostTreasuries(treasuries)
-		// if res.StatusCode() == http.StatusOK {
-		// 	err = f.repos.Database.InsertTreasuries(lastInvoiceId)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
-		return err
-	}
 
 	return nil
 }
@@ -412,43 +414,11 @@ func (f *Fararavand) SyncTreasuries(treasuries []models.Treasuries) error {
 // GetInvoiceReturns get all revert invoices data from the first ERP
 func (f *Fararavand) SyncInvoiceReturns(invoiceReturn []models.InvoiceReturn) error {
 
-	lastInvoiceId := invoiceReturn[len(invoiceReturn)-1].InvoiceID
-
-	lastSalerSelectId, err := f.repos.Database.GetInvoiceReturn()
-	if err != nil {
-		return err
-	}
-
-	if lastInvoiceId > lastSalerSelectId {
-		invoiceReturn = invoiceReturn[lastSalerSelectId:]
-		// res, err := f.aryan.PostinvoiceReturn(invoiceReturn)
-		// if res.StatusCode() == http.StatusOK {
-		// 	err = f.repos.Database.InsertinvoiceReturn(lastInvoiceId)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
-		return err
-	}
-
 	return nil
 }
 
 // SyncBaseData gets all base information from the first ERP
 func (f *Fararavand) SyncBaseData() error {
-	var newData = new(models.Fararavand)
-
-	resp, err := f.restyClient.R().
-		SetResult(newData).
-		Get(utility.FGetBaseData)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
-	}
 
 	return nil
 }
