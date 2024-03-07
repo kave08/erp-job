@@ -266,7 +266,7 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 // It converts each Invoice into a SaleCenter4SaleSelect by mapping relevant fields such as StockID and StockDesc.
 // The function then makes a POST request to the sale center service endpoint with the slice of SaleCenter4SaleSelect as the request body.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices)  error {
+func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 	var newSaleCenter []models.SaleCenter4SaleSelect
 
 	for _, item := range fp {
@@ -421,7 +421,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 // It converts each Invoice into a SaleTypeSelect by mapping its fields to the corresponding SaleTypeSelect fields.
 // The function then sends a POST request with the slice of SaleTypeSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 	var newSaleTypeSelect []models.SaleTypeSelect
 
 	for _, item := range fp {
@@ -432,16 +432,34 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Respon
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleTypeSelect).Post(utility.ASaleTypeSelect)
+	body, err := json.Marshal(newSaleTypeSelect)
 	if err != nil {
-		return nil, err
+
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleTypeSelect, bytes.NewReader(body))
+	if err != nil {
+
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostBaseDataToSaleCenterSelect takes a slice of payment types of BaseData and posts them to the sale center select service.
