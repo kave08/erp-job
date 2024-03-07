@@ -342,13 +342,14 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 // It converts each Invoice into a SaleProforma by mapping its fields to the corresponding SaleProforma fields.
 // The function then sends a POST request with the slice of SaleProforma as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response, error) {
+func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 	var newSaleProforma []models.SaleProforma
 
 	for _, item := range fp {
 		visitorCode, err := strconv.Atoi(item.VisitorCode)
 		if err != nil {
-			return nil, err
+			
+			return err
 		}
 		newSaleProforma = append(newSaleProforma, models.SaleProforma{
 			CustomerId:       item.CustomerID,
@@ -368,16 +369,34 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) (*resty.Response
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleProforma).Post(utility.ASaleProforma)
+	body, err := json.Marshal(newSaleProforma)
 	if err != nil {
-		return nil, err
+
+		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleProforma, bytes.NewReader(body))
+	if err != nil {
+
+		return err
 	}
 
-	return res, nil
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
+	return nil
 }
 
 // PostInvoiceToSaleTypeSelect takes a slice of Invoices and posts them to the sale type select service.
