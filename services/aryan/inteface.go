@@ -12,7 +12,7 @@ type AryanInterface interface {
 	PostCustomerToSaleCustomer(fc []models.Customers) error
 	PostInvoiceToSaleOrder(fp []models.Invoices) error
 	PostInvoiceToSalePayment(fp []models.Invoices) error
-	PostInvoiceToSaleCenter(fp []models.Invoices) (*resty.Response, error)
+	PostInvoiceToSaleCenter(fp []models.Invoices) error
 	PostInvoiceToSalerSelect(fp []models.Invoices) error
 	PostInvoiceToSaleProforma(fp []models.Invoices) error
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) (*resty.Response, error)
