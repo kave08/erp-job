@@ -83,7 +83,7 @@ func (b *BaseData) BaseData() error {
 	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
 	// }
 
-	err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
+	lastId, err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
 	if err != nil {
 		fmt.Println("load SyncBaseDataWithDeliverCenter encountered an error: %w", err)
 		return err
