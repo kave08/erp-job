@@ -2,8 +2,6 @@ package aryan
 
 import (
 	"erp-job/models"
-
-	"github.com/go-resty/resty/v2"
 )
 
 type AryanInterface interface {
@@ -16,7 +14,7 @@ type AryanInterface interface {
 	PostInvoiceToSalerSelect(fp []models.Invoices) error
 	PostInvoiceToSaleProforma(fp []models.Invoices) error
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) error
-	PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error)
+	PostBaseDataToSaleCenterSelect(baseData models.BaseData) error
 	PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) error
-	PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error)
+	PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error
 }
