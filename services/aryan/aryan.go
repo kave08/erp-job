@@ -11,25 +11,18 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-
-	"github.com/go-resty/resty/v2"
 )
 
 type Aryan struct {
-	restyClient *resty.Client
-	httpClient  *http.Client
-	baseUrl     string
-	repos       *repository.Repository
+	httpClient *http.Client
+	baseUrl    string
+	repos      *repository.Repository
 }
 
 func NewAryan(repos *repository.Repository) AryanInterface {
-	c := resty.New().
-		SetHeader("ApiKey", config.Cfg.AryanApp.APIKey).SetBaseURL(config.Cfg.AryanApp.BaseURL)
-
 	return &Aryan{
-		restyClient: c,
-		baseUrl:     config.Cfg.AryanApp.BaseURL,
-		repos:       repos,
+		baseUrl: config.Cfg.AryanApp.BaseURL,
+		repos:   repos,
 		httpClient: &http.Client{
 			Timeout: config.Cfg.AryanApp.Timeout,
 		},
@@ -151,13 +144,30 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleCustomer).Post(utility.ASaleCustomer)
+	body, err := json.Marshal(newSaleCustomer)
 	if err != nil {
+
 		return err
 	}
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleCustomer, bytes.NewReader(body))
+	if err != nil {
+
+		return err
+	}
+
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
 	}
 
 	return nil
@@ -466,7 +476,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 // It converts each base data into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData)  error {
+func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) error {
 	var newSaleCenterSelect []models.SaleCenterSelect
 
 	for _, item := range baseData.PaymentTypes {
@@ -481,7 +491,6 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData)  error 
 	// if err != nil {
 	// 	return nil, err
 	// }
-
 
 	return nil
 }
@@ -513,7 +522,6 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 		return err
 	}
 
-
 	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
 
 	res, err := a.httpClient.Do(req)
@@ -535,7 +543,7 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 // It converts each PaymentTypes into a SaleSellerVisitor by mapping its fields to the corresponding SaleSellerVisitor fields.
 // The function then sends a POST request with the slice of SaleSellerVisitor as the request body to the sale seller visitor service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error) {
+func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error {
 	var newSaleSellerVisitor []models.SaleSellerVisitor
 
 	for _, item := range baseData.PaymentTypes {
@@ -545,14 +553,14 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*rest
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleSellerVisitor).Post(utility.ASaleSellerVisitor)
-	if err != nil {
-		return nil, err
-	}
+	// res, err := a.restyClient.R().SetBody(newSaleSellerVisitor).Post(utility.ASaleSellerVisitor)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
-	}
+	// if res.StatusCode() != http.StatusOK {
+	// 	fmt.Println(res.Body())
+	// }
 
-	return res, nil
+	return nil
 }
