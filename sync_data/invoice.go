@@ -101,13 +101,13 @@ func (i *Invoice) Invoices() error {
 		return err
 	}
 
-	err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSalerSelect encountered an error: %w", err)
 		return err
 	}
 
-	err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
+	lastId, err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
 	if err != nil {
 		fmt.Println("load SyncInvoicesWithSaleProforma encountered an error: %w", err)
 		return err
