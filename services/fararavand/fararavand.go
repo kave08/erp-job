@@ -5,30 +5,19 @@ import (
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
-	"erp-job/utility"
-	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/go-resty/resty/v2"
 )
 
 type Fararavand struct {
-	restyClient *resty.Client
-	baseUrl     string
-	repos       *repository.Repository
-	aryan       aryan.AryanInterface
+	baseUrl string
+	repos   *repository.Repository
+	aryan   aryan.AryanInterface
 }
 
 func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) FararavandInterface {
-	c := resty.New().
-		SetHeader("ApiKey", config.Cfg.FararavandApp.APIKey).SetBaseURL(config.Cfg.FararavandApp.BaseURL)
-
 	return &Fararavand{
-		restyClient: c,
-		baseUrl:     config.Cfg.FararavandApp.BaseURL,
-		repos:       repos,
-		aryan:       aryan,
+		baseUrl: config.Cfg.FararavandApp.BaseURL,
+		repos:   repos,
+		aryan:   aryan,
 	}
 }
 
@@ -419,68 +408,17 @@ func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) (in
 // GetTreasuries get all treasuries data from the first ERP
 func (f *Fararavand) SyncTreasuries(treasuries []models.Treasuries) error {
 
-	lastInvoiceId := treasuries[len(treasuries)-1].InvoiceID
-
-	lastSalerSelectId, err := f.repos.Database.GetTreasuries()
-	if err != nil {
-		return err
-	}
-
-	if lastInvoiceId > lastSalerSelectId {
-		treasuries = treasuries[lastSalerSelectId:]
-		// res, err := f.aryan.PostTreasuries(treasuries)
-		// if res.StatusCode() == http.StatusOK {
-		// 	err = f.repos.Database.InsertTreasuries(lastInvoiceId)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
-		return err
-	}
-
 	return nil
 }
 
 // GetInvoiceReturns get all revert invoices data from the first ERP
 func (f *Fararavand) SyncInvoiceReturns(invoiceReturn []models.InvoiceReturn) error {
 
-	lastInvoiceId := invoiceReturn[len(invoiceReturn)-1].InvoiceID
-
-	lastSalerSelectId, err := f.repos.Database.GetInvoiceReturn()
-	if err != nil {
-		return err
-	}
-
-	if lastInvoiceId > lastSalerSelectId {
-		invoiceReturn = invoiceReturn[lastSalerSelectId:]
-		// res, err := f.aryan.PostinvoiceReturn(invoiceReturn)
-		// if res.StatusCode() == http.StatusOK {
-		// 	err = f.repos.Database.InsertinvoiceReturn(lastInvoiceId)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
-		return err
-	}
-
 	return nil
 }
 
 // SyncBaseData gets all base information from the first ERP
 func (f *Fararavand) SyncBaseData() error {
-	var newData = new(models.Fararavand)
-
-	resp, err := f.restyClient.R().
-		SetResult(newData).
-		Get(utility.FGetBaseData)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		log.Printf("status code: %d", resp.StatusCode())
-		return fmt.Errorf(utility.ErrNotOk)
-	}
 
 	return nil
 }
