@@ -466,7 +466,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 // It converts each base data into a SaleCenterSelect by mapping its fields to the corresponding SaleCenterSelect fields.
 // The function then sends a POST request with the slice of SaleCenterSelect as the request body to the sale proforma service endpoint.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error) {
+func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData)  error {
 	var newSaleCenterSelect []models.SaleCenterSelect
 
 	for _, item := range baseData.PaymentTypes {
@@ -477,16 +477,13 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty
 		})
 	}
 
-	res, err := a.restyClient.R().SetBody(newSaleCenterSelect).Post(utility.ASaleCenterSelect)
-	if err != nil {
-		return nil, err
-	}
+	// res, err := a.restyClient.R().SetBody(newSaleCenterSelect).Post(utility.ASaleCenterSelect)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if res.StatusCode() != http.StatusOK {
-		fmt.Println(res.Body())
-	}
 
-	return res, nil
+	return nil
 }
 
 // PostBaseDataToDeliverCenterSaleSelect takes a slice of payment types of BaseData and posts them to the deliver center sale select service.
