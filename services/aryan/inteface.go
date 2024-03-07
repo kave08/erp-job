@@ -17,6 +17,6 @@ type AryanInterface interface {
 	PostInvoiceToSaleProforma(fp []models.Invoices) error
 	PostInvoiceToSaleTypeSelect(fp []models.Invoices) error
 	PostBaseDataToSaleCenterSelect(baseData models.BaseData) (*resty.Response, error)
-	PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) (*resty.Response, error)
+	PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) error
 	PostBaseDataToSaleSellerVisitor(baseData models.BaseData) (*resty.Response, error)
 }
