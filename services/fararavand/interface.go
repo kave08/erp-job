@@ -9,7 +9,7 @@ type FararavandInterface interface {
 	SyncInvoicesWithSaleFactor(invoices []models.Invoices) (int, error)
 	SyncInvoicesWithSaleOrder(invoices []models.Invoices) (int, error)
 	SyncInvoicesWithSalePayment(invoices []models.Invoices) (int, error)
-	SyncInvoicesWithSalerSelect(invoices []models.Invoices) error
+	SyncInvoicesWithSalerSelect(invoices []models.Invoices) (int, error)
 	SyncInvoicesWithSaleProforma(invoices []models.Invoices) error
 	SyncInvoicesWithSaleCenter(invoices []models.Invoices) error
 	SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) error
