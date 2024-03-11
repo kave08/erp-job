@@ -6,7 +6,6 @@ import (
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
-	"erp-job/utility"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,7 +60,7 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleFactor, bytes.NewReader(body))
+		SaleFactor, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -112,7 +111,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.AGoods, bytes.NewReader(body))
+		Goods, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -155,7 +154,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleCustomer, bytes.NewReader(body))
+		SaleCustomer, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -212,7 +211,7 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleOrder, bytes.NewReader(body))
+		SaleOrder, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -257,7 +256,7 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASalePaymentSelect, bytes.NewReader(body))
+		SalePaymentSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -304,7 +303,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleCenter4SaleSelect, bytes.NewReader(body))
+		SaleCenter4SaleSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -355,7 +354,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASalerSelect, bytes.NewReader(body))
+		SalerSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -418,7 +417,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleProforma, bytes.NewReader(body))
+		SaleProforma, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -465,7 +464,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleTypeSelect, bytes.NewReader(body))
+		SaleTypeSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -512,7 +511,7 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleCenterSelect, bytes.NewReader(body))
+		SaleCenterSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -558,7 +557,7 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ADeliverCenterSaleSelect, bytes.NewReader(body))
+		DeliverCenterSaleSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -604,7 +603,7 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleSellerVisitor, bytes.NewReader(body))
+		SaleSellerVisitor, bytes.NewReader(body))
 	if err != nil {
 
 		return err
