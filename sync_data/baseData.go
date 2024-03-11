@@ -91,7 +91,7 @@ func (b *BaseData) BaseData() error {
 			return fmt.Errorf(utility.ErrNotOk)
 		}
 
-		lastId, err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
+		err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
 		if err != nil {
 			fmt.Println("load SyncBaseDataWithDeliverCenter encountered an error: %w", err)
 			return err
