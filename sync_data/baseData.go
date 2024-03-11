@@ -1,6 +1,7 @@
 package syncdata
 
 import (
+	"database/sql"
 	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
@@ -45,14 +46,14 @@ func (b *BaseData) BaseData() error {
 
 	for {
 
-		//TODO: select invoice_progress_info last,page_number
-		//TODO: if sql.NoRows {
-		// 	lastId = 0
-		// 	pageNumber = 0
-		// }else {
-		// 	lastId = last_id
-		// 	pageNumber = page_number + page_size + 1
-		// }
+		lastBaseDataId, lastPageNumber, err := b.repos.Database.GetBaseDataProgress()
+		if err == sql.ErrNoRows {
+			lastId = 0
+			pageNumber = 0
+		} else {
+			lastId = lastBaseDataId
+			pageNumber = lastPageNumber + pageSize + 1
+		}
 
 		req, err := http.NewRequest(http.MethodGet, b.baseURL+
 			fmt.Sprintf(GetBaseData, pageNumber, pageSize, lastId), nil)
@@ -77,9 +78,9 @@ func (b *BaseData) BaseData() error {
 			return err
 		}
 
-		// if len(response.NewBaseData) == 0 {
-		// 	break
-		// }
+		if len(response.NewBaseData.PaymentTypes) == 0 {
+			break
+		}
 
 		if res.StatusCode != response.Status {
 			return fmt.Errorf("get base data http request failed(body). status: %d, response: %v", response.Status, res.Body)
@@ -96,12 +97,15 @@ func (b *BaseData) BaseData() error {
 			return err
 		}
 
-		// lastId = pageNumber + len(response.NewInvoices)
-		// //TODO: insert in data base last_id, old_page_number is store in invoice_progress_info
+		lastId = pageNumber + len(response.NewBaseData.PaymentTypes)
 
-		// if len(response.NewInvoices) < pageSize {
-		// 	break
-		// }
+		err = b.repos.Database.InsertBaseDataProgress(lastId, pageNumber)
+		if err != nil {
+			return err
+		}
+		if len(response.NewBaseData.PaymentTypes) < pageSize {
+			break
+		}
 
 	}
 
