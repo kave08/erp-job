@@ -14,6 +14,8 @@ const (
 	GetInvoiceProgressQuery     = "SELECT last_id, page_number FROM invoice_progress_info ORDER BY id LIMIT 1;"
 	InsertCustomerProgressQuery = "INSERT INTO customer_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
 	GetCustomerProgressQuery    = "SELECT last_id, page_number FROM customer_progress_info ORDER BY id LIMIT 1;"
+	InsertProductProgressQuery  = "INSERT INTO product_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
+	GetProductProgressQuery     = "SELECT last_id, page_number FROM product_progress_info ORDER BY id LIMIT 1;"
 
 	//id query will store and retrieve max id's
 	InsertProductsToGoodsMaxIdQuery         = "INSERT INTO products_to_goods (p_id, created_at) VALUES(?, ?);"
@@ -47,6 +49,8 @@ type DatabaseInterface interface {
 	InsertInvoiceProgress(laseId, pageNumber int) error
 	GetCustomerProgress() (int, int, error)
 	InsertCustomerProgress(laseId, pageNumber int) error
+	GetProductProgress() (int, int, error)
+	InsertProductProgress(laseId, pageNumber int) error
 
 	InsertProductsToGoods(p_id int) error
 	GetProductsToGoods() (int, error)
@@ -152,6 +156,38 @@ func (d *Database) GetCustomerProgress() (int, int, error) {
 // InsertCustomerProgress implements DatabaseInterface
 func (d *Database) InsertCustomerProgress(laseId, pageNumber int) error {
 	_, err := d.sdb.Exec(InsertCustomerProgressQuery, laseId, pageNumber, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetProductProgress implements DatabaseInterface
+func (d *Database) GetProductProgress() (int, int, error) {
+	var laseId int
+	var pageNumber int
+
+	err := d.sdb.QueryRow(GetProductProgressQuery).Scan(&laseId, &pageNumber)
+	if err != nil {
+		switch err {
+		case sql.ErrConnDone:
+			log.Printf("Database connection error: %v", err)
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetProductProgress %w %v ", err, laseId)
+		case sql.ErrTxDone:
+			log.Printf("Database transaction error: %v", err)
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetProductProgress %w %v ", err, laseId)
+		default:
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetProductProgress %w %v ", err, laseId)
+		}
+	}
+
+	return laseId, pageNumber, err
+}
+
+// InsertProductProgress implements DatabaseInterface
+func (d *Database) InsertProductProgress(laseId, pageNumber int) error {
+	_, err := d.sdb.Exec(InsertProductProgressQuery, laseId, pageNumber, time.Now())
 	if err != nil {
 		return err
 	}
