@@ -124,6 +124,8 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 		return err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
@@ -166,6 +168,8 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -222,6 +226,8 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 		return err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
 		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
@@ -264,6 +270,8 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -309,6 +317,8 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -358,6 +368,8 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -420,6 +432,8 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 		return err
 	}
 
+	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
 
@@ -464,6 +478,8 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -526,6 +542,8 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
