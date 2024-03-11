@@ -10,8 +10,10 @@ import (
 const (
 
 	//progress details will store and retrieve pagination's data
-	InsertInvoiceProgressQuery = "INSERT INTO invoice_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
-	GetInvoiceProgressQuery    = "SELECT last_id, page_number FROM invoice_progress_info ORDER BY id LIMIT 1;"
+	InsertInvoiceProgressQuery  = "INSERT INTO invoice_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
+	GetInvoiceProgressQuery     = "SELECT last_id, page_number FROM invoice_progress_info ORDER BY id LIMIT 1;"
+	InsertCustomerProgressQuery = "INSERT INTO customer_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
+	GetCustomerProgressQuery    = "SELECT last_id, page_number FROM customer_progress_info ORDER BY id LIMIT 1;"
 
 	//id query will store and retrieve max id's
 	InsertProductsToGoodsMaxIdQuery         = "INSERT INTO products_to_goods (p_id, created_at) VALUES(?, ?);"
@@ -43,6 +45,8 @@ const (
 type DatabaseInterface interface {
 	GetInvoiceProgress() (int, int, error)
 	InsertInvoiceProgress(laseId, pageNumber int) error
+	GetCustomerProgress() (int, int, error)
+	InsertCustomerProgress(laseId, pageNumber int) error
 
 	InsertProductsToGoods(p_id int) error
 	GetProductsToGoods() (int, error)
@@ -100,9 +104,10 @@ func (d *Database) GetInvoiceProgress() (int, int, error) {
 	if err != nil {
 		switch err {
 		case sql.ErrConnDone:
-
+			log.Printf("Database connection error: %v", err)
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetInvoiceProgress %w %v ", err, laseId)
 		case sql.ErrTxDone:
-			log.Printf("Database connection or transaction error: %v", err)
+			log.Printf("Database transaction error: %v", err)
 			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetInvoiceProgress %w %v ", err, laseId)
 		default:
 			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetInvoiceProgress %w %v ", err, laseId)
@@ -115,6 +120,38 @@ func (d *Database) GetInvoiceProgress() (int, int, error) {
 // InsertInvoiceProgress implements DatabaseInterface
 func (d *Database) InsertInvoiceProgress(laseId, pageNumber int) error {
 	_, err := d.sdb.Exec(InsertInvoiceProgressQuery, laseId, pageNumber, time.Now())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetCustomerProgress implements DatabaseInterface
+func (d *Database) GetCustomerProgress() (int, int, error) {
+	var laseId int
+	var pageNumber int
+
+	err := d.sdb.QueryRow(GetCustomerProgressQuery).Scan(&laseId, &pageNumber)
+	if err != nil {
+		switch err {
+		case sql.ErrConnDone:
+			log.Printf("Database connection error: %v", err)
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetCustomerProgress %w %v ", err, laseId)
+		case sql.ErrTxDone:
+			log.Printf("Database transaction error: %v", err)
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetCustomerProgress %w %v ", err, laseId)
+		default:
+			return laseId, pageNumber, fmt.Errorf("@ERP.repository.database.database.GetCustomerProgress %w %v ", err, laseId)
+		}
+	}
+
+	return laseId, pageNumber, err
+}
+
+// InsertCustomerProgress implements DatabaseInterface
+func (d *Database) InsertCustomerProgress(laseId, pageNumber int) error {
+	_, err := d.sdb.Exec(InsertCustomerProgressQuery, laseId, pageNumber, time.Now())
 	if err != nil {
 		return err
 	}
