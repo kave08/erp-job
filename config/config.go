@@ -16,6 +16,7 @@ type config struct {
 	AryanApp      AryanApp      `yaml:"ARYAN_APP"`
 	FararavandApp FararavandApp `yaml:"FARARAVAND_APP"`
 	Database      Database      `yaml:"DATABASE"`
+	App           App           `yaml:"APP"`
 }
 type AryanApp struct {
 	BaseURL  string        `yaml:"BASE_URL"`
@@ -40,6 +41,10 @@ type Database struct {
 	DBName             string `yaml:"DB_NAME"`
 	MaxOpenConnections int    `yaml:"MAX_OPEN_CONNECTIONS"`
 	MaxIdleConnections int    `yaml:"MAX_IDLE_CONNECTIONS"`
+}
+
+type App struct {
+	LogPath string `yaml:"LOG_PATH"`
 }
 
 type SetupResult struct {
