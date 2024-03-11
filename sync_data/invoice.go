@@ -8,9 +8,11 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility/logger"
 	"fmt"
-	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 // InvoiceResponse is the response for the invoice
@@ -20,6 +22,7 @@ type InvoiceResponse struct {
 }
 
 type Invoice struct {
+	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
@@ -29,6 +32,7 @@ type Invoice struct {
 
 func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Invoice {
 	return &Invoice{
+		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
@@ -57,6 +61,12 @@ func (i *Invoice) Invoices() error {
 		req, err := http.NewRequest(http.MethodGet, i.baseURL+
 			fmt.Sprintf(GetInvoices, pageNumber, pageSize, lastId), nil)
 		if err != nil {
+			i.log.Errorw("get invoice request encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -64,16 +74,24 @@ func (i *Invoice) Invoices() error {
 
 		res, err := i.httpClient.Do(req)
 		if err != nil {
-			return err
-		}
+			i.log.Errorw("get invoice response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
 
-		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+			return err
 		}
 
 		response := new(InvoiceResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
+			i.log.Errorw("get invoice decode response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -82,49 +100,84 @@ func (i *Invoice) Invoices() error {
 		}
 
 		if res.StatusCode != http.StatusOK {
-			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(ErrNotOk)
+
+			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
 		err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSaleFactor encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSaleOrder encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSaleOrder encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSalePayment encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSalerSelect encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSalerSelect encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSaleProforma encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSaleProforma encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoicesWithSaleCenter(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoicesWithSaleCenter encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		err = i.fararavand.SyncInvoiceWithSaleTypeSelect(response.NewInvoices)
 		if err != nil {
-			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
+			i.log.Errorw("load SyncInvoiceWithSaleTypeSelect encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -132,6 +185,12 @@ func (i *Invoice) Invoices() error {
 
 		err = i.repos.Database.InsertInvoiceProgress(lastId, pageNumber)
 		if err != nil {
+			i.log.Errorw("InsertInvoiceProgress encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
