@@ -12,7 +12,6 @@ import (
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
 	"fmt"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -64,6 +63,12 @@ func (p Product) Products() error {
 		req, err := http.NewRequest(http.MethodGet, p.baseURL+
 			fmt.Sprintf(GetProducts, pageNumber, pageSize, lastId), nil)
 		if err != nil {
+			p.log.Errorw("get product request encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -71,16 +76,34 @@ func (p Product) Products() error {
 
 		res, err := p.httpClient.Do(req)
 		if err != nil {
+			p.log.Errorw("get product response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("get products http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+			p.log.Errorw("get product http request failed.",
+				"error", err,
+				"status:", res.StatusCode,
+				"response", res.Body,
+			)
+
+			return fmt.Errorf("get product http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
 		response := new(ProductResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
+			p.log.Errorw("get product decode response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -88,20 +111,27 @@ func (p Product) Products() error {
 			break
 		}
 
-		if res.StatusCode != http.StatusOK {
-			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(ErrNotOk)
-		}
-
 		err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
 		if err != nil {
-			return fmt.Errorf("load SyncProductsWithGoods encountered an error: %w", err)
+			p.log.Errorw("load SyncProductsWithGoods encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
+			return err
 		}
 
 		lastId = pageNumber + len(response.NewProducts)
 
 		err = p.repos.Database.InsertProductProgress(lastId, pageNumber)
 		if err != nil {
+			p.log.Errorw("InsertProductProgress encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
