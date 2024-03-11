@@ -8,9 +8,11 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility/logger"
 	"fmt"
-	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 // CustomerResponse is the response for the customer
@@ -20,6 +22,7 @@ type CustomerResponse struct {
 }
 
 type Customer struct {
+	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
@@ -29,6 +32,7 @@ type Customer struct {
 
 func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Customer {
 	return &Customer{
+		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
@@ -57,6 +61,12 @@ func (c Customer) Customers() error {
 		req, err := http.NewRequest(http.MethodGet, c.baseURL+
 			fmt.Sprintf(GetCustomers, pageNumber, pageSize, lastId), nil)
 		if err != nil {
+			c.log.Errorw("get customer request encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -68,12 +78,23 @@ func (c Customer) Customers() error {
 		}
 
 		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+			c.log.Errorw("get customer http request failed.",
+				"error", err,
+				"status:", res.StatusCode,
+				"response", res.Body,
+			)
+
+			return fmt.Errorf("get customer http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
 		response := new(CustomerResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
+			c.log.Errorw("get customer decode response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
 			return err
 		}
 
@@ -81,14 +102,14 @@ func (c Customer) Customers() error {
 			break
 		}
 
-		if res.StatusCode != http.StatusOK {
-			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(ErrNotOk)
-		}
-
 		err = c.fararavand.SyncCustomersWithSaleCustomer(response.NewCustomers)
 		if err != nil {
-			fmt.Println("Load SyncCustomersWithSaleCustomer encountered an error", err.Error())
+			c.log.Errorw("load SyncCustomersWithSaleCustomer encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -96,6 +117,12 @@ func (c Customer) Customers() error {
 
 		err = c.repos.Database.InsertCustomerProgress(lastId, pageNumber)
 		if err != nil {
+			c.log.Errorw("load InsertCustomerProgress encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
