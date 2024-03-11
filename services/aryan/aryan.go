@@ -28,11 +28,11 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 	}
 }
 
-// PostInoviceToSaleFactor takes a slice of Invoices and converts them into SaleFactors.
+// PostInvoiceToSaleFactor takes a slice of Invoices and converts them into SaleFactors.
 // Each Invoice is transformed into a SaleFactor by mapping its fields to the corresponding SaleFactor fields.
 // The function then sends a POST request with the slice of SaleFactors as the request body to the sale factor service.
 // The function returns the server response and an error if the request fails.
-func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
+func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
 
 	for _, item := range fp {
