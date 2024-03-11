@@ -11,13 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 )
-
-var lastId int
-var pageNumber int
-var pageSize int = 1000
-var mutex *sync.Mutex
 
 // InvoiceResponse is the response for the invoice
 type InvoiceResponse struct {
@@ -46,83 +40,102 @@ func NewInvoice(repos *repository.Repository, fr fararavand.FararavandInterface,
 }
 
 func (i *Invoice) Invoices() error {
+	var lastId int
+	var pageNumber int
+	var pageSize int = 1000
 
-	req, err := http.NewRequest(http.MethodGet, i.baseURL+
-		fmt.Sprintf("/GetInvoices?PageNumeber=%d&PageSize=%d&LastId=%d/", pageNumber, pageSize, lastId), nil)
-	if err != nil {
-		return err
-	}
+	for {
 
-	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+		//TODO: select invoice_progress_info last,page_number
+		//TODO: if sql.NoRows {
+		// 	lastId = 0
+		// 	pageNumber = 0
+		// }else {
+		// 	lastId = last_id
+		// 	pageNumber = page_number + page_size + 1
+		// }
 
-	res, err := i.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
+		req, err := http.NewRequest(http.MethodGet, i.baseURL+
+			fmt.Sprintf(GetInvoices, pageNumber, pageSize, lastId), nil)
+		if err != nil {
+			return err
+		}
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
-	}
+		req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
 
-	response := new(InvoiceResponse)
-	err = json.NewDecoder(res.Body).Decode(response)
-	if err != nil {
-		return err
-	}
+		res, err := i.httpClient.Do(req)
+		if err != nil {
+			return err
+		}
 
-	if res.StatusCode != response.Status {
-		return fmt.Errorf("get invoice http request failed(body). status: %d, response: %v", response.Status, res.Body)
-	}
+		if res.StatusCode != http.StatusOK {
+			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+		}
 
-	if res.StatusCode != http.StatusOK {
-		log.Printf("status code: %d", res.StatusCode)
-		return fmt.Errorf(utility.ErrNotOk)
-	}
+		response := new(InvoiceResponse)
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			return err
+		}
 
-	// if lastId <= 0 {
-	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
-	// }
+		if len(response.NewInvoices) == 0 {
+			break
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
-		return err
-	}
+		if res.StatusCode != http.StatusOK {
+			log.Printf("status code: %d", res.StatusCode)
+			return fmt.Errorf(utility.ErrNotOk)
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSaleOrder encountered an error: %w", err)
-		return err
-	}
+		_, err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
+			return err
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
-		return err
-	}
+		_, err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSaleOrder encountered an error: %w", err)
+			return err
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSalerSelect encountered an error: %w", err)
-		return err
-	}
+		_, err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
+			return err
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSaleProforma encountered an error: %w", err)
-		return err
-	}
+		_, err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSalerSelect encountered an error: %w", err)
+			return err
+		}
 
-	lastId, err = i.fararavand.SyncInvoicesWithSaleCenter(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
-		return err
-	}
+		_, err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSaleProforma encountered an error: %w", err)
+			return err
+		}
 
-	lastId, err = i.fararavand.SyncInvoiceWithSaleTypeSelect(response.NewInvoices)
-	if err != nil {
-		fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
-		return err
+		_, err = i.fararavand.SyncInvoicesWithSaleCenter(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
+			return err
+		}
+
+		_, err = i.fararavand.SyncInvoiceWithSaleTypeSelect(response.NewInvoices)
+		if err != nil {
+			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
+			return err
+		}
+
+		lastId = pageNumber + len(response.NewInvoices)
+		//TODO: insert in data base last_id, old_page_number is store in invoice_progress_info
+
+		if len(response.NewInvoices) < pageSize {
+			break
+		}
+
 	}
 
 	return nil
