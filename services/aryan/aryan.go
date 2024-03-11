@@ -6,7 +6,6 @@ import (
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
-	"erp-job/utility"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,7 +60,7 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleFactor, bytes.NewReader(body))
+		SaleFactor, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -112,7 +111,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.AGoods, bytes.NewReader(body))
+		Goods, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -123,6 +122,8 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 	if err != nil {
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -153,7 +154,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleCustomer, bytes.NewReader(body))
+		SaleCustomer, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -166,6 +167,8 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -208,7 +211,7 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleOrder, bytes.NewReader(body))
+		SaleOrder, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -221,6 +224,8 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -251,7 +256,7 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASalePaymentSelect, bytes.NewReader(body))
+		SalePaymentSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -264,6 +269,8 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -296,7 +303,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleCenter4SaleSelect, bytes.NewReader(body))
+		SaleCenter4SaleSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -309,6 +316,8 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -345,7 +354,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASalerSelect, bytes.NewReader(body))
+		SalerSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -358,6 +367,8 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -406,7 +417,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleProforma, bytes.NewReader(body))
+		SaleProforma, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -419,6 +430,8 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -451,7 +464,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ASaleTypeSelect, bytes.NewReader(body))
+		SaleTypeSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -464,6 +477,8 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -487,6 +502,35 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) error {
 			CentersCode: strconv.Itoa(item.ID),
 			CenterDesc:  item.Name,
 		})
+	}
+
+	body, err := json.Marshal(newSaleCenterSelect)
+	if err != nil {
+
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		SaleCenterSelect, bytes.NewReader(body))
+	if err != nil {
+
+		return err
+	}
+
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
 	}
 
 	return nil
@@ -513,7 +557,7 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
-		utility.ADeliverCenterSaleSelect, bytes.NewReader(body))
+		DeliverCenterSaleSelect, bytes.NewReader(body))
 	if err != nil {
 
 		return err
@@ -526,6 +570,8 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 
 		return err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
@@ -548,6 +594,35 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error 
 			CentersID:   item.ID,
 			CentersCode: strconv.Itoa(item.ID),
 		})
+	}
+
+	body, err := json.Marshal(newSaleSellerVisitor)
+	if err != nil {
+
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		SaleSellerVisitor, bytes.NewReader(body))
+	if err != nil {
+
+		return err
+	}
+
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
 	}
 
 	return nil

@@ -7,7 +7,6 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
-	"erp-job/utility"
 	"fmt"
 	"log"
 	"net/http"
@@ -88,7 +87,7 @@ func (b *BaseData) BaseData() error {
 
 		if res.StatusCode != http.StatusOK {
 			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(utility.ErrNotOk)
+			return fmt.Errorf(ErrNotOk)
 		}
 
 		err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)

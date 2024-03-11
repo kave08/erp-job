@@ -18,7 +18,6 @@ type Sync struct {
 
 func NewSync(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Sync {
 	return &Sync{
-
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
