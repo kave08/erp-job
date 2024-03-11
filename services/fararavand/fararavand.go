@@ -5,9 +5,13 @@ import (
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
+	"erp-job/utility/logger"
+
+	"go.uber.org/zap"
 )
 
 type Fararavand struct {
+	log     *zap.SugaredLogger
 	baseUrl string
 	repos   *repository.Repository
 	aryan   aryan.AryanInterface
@@ -15,6 +19,7 @@ type Fararavand struct {
 
 func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) FararavandInterface {
 	return &Fararavand{
+		log:     logger.Logger(),
 		baseUrl: config.Cfg.FararavandApp.BaseURL,
 		repos:   repos,
 		aryan:   aryan,
@@ -29,8 +34,14 @@ func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) Far
 func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers) error {
 
 	lastCustomerId := customers[len(customers)-1].ID
+
 	lastSaleCustomerId, err := f.repos.Database.GetCustomerToSaleCustomer()
 	if err != nil {
+		f.log.Errorw("GetCustomerToSaleCustomer encountered an error: ",
+			"error", err,
+			"last_sale_customer_id", lastSaleCustomerId,
+		)
+
 		return err
 	}
 
@@ -45,11 +56,20 @@ func (f *Fararavand) SyncCustomersWithSaleCustomer(customers []models.Customers)
 
 	err = f.aryan.PostCustomerToSaleCustomer(customers)
 	if err != nil {
+		f.log.Errorw("PostCustomerToSaleCustomer encountered an error: ",
+			"error", err,
+		)
+
 		return err
 	}
 
 	err = f.repos.Database.InsertCustomerToSaleCustomer(lastCustomerId)
 	if err != nil {
+		f.log.Errorw("InsertCustomerToSaleCustomer encountered an error: ",
+			"error", err,
+			"last_customer_id", lastCustomerId,
+		)
+
 		return err
 	}
 
@@ -67,6 +87,11 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 
 	lastGoodsId, err := f.repos.Database.GetProductsToGoods()
 	if err != nil {
+		f.log.Errorw("GetProductsToGoods encountered an error: ",
+			"error", err,
+			"last_goods_id", lastGoodsId,
+		)
+
 		return err
 	}
 
@@ -81,11 +106,20 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 
 	err = f.aryan.PostProductsToGoods(products)
 	if err != nil {
+		f.log.Errorw("PostProductsToGoods encountered an error: ",
+			"error", err,
+		)
+
 		return err
 	}
 
 	err = f.repos.Database.InsertProductsToGoods(lastProductId)
 	if err != nil {
+		f.log.Errorw("InsertProductsToGoods encountered an error: ",
+			"error", err,
+			"last_product_id", lastProductId,
+		)
+
 		return err
 	}
 
@@ -100,9 +134,14 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) error {
 func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) error {
 	//TODO:check max id
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
-	//added logger
+
 	lastSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+			"last_sale_factor_id", lastSaleFactorId,
+		)
+
 		return err
 	}
 
@@ -115,13 +154,22 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) erro
 		}
 	}
 
-	err = f.aryan.PostInoviceToSaleFactor(invoices)
+	err = f.aryan.PostInvoiceToSaleFactor(invoices)
 	if err != nil {
+		f.log.Errorw("PostInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+		)
+
 		return err
 	}
 
 	err = f.repos.Database.InsertInvoiceToSaleFactor(lastInvoiceId)
 	if err != nil {
+		f.log.Errorw("InsertInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+			"last_invoice_id", lastInvoiceId,
+		)
+
 		return err
 	}
 
@@ -139,6 +187,11 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
 
 	lastSaleOrderId, err := f.repos.Database.GetInvoiceToSaleOrder()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleOrder encountered an error: ",
+			"error", err,
+			"last_sale_order_id", lastSaleOrderId,
+		)
+
 		return err
 	}
 
@@ -153,12 +206,21 @@ func (f *Fararavand) SyncInvoicesWithSaleOrder(invoices []models.Invoices) error
 
 	err = f.aryan.PostInvoiceToSaleOrder(invoices)
 	if err != nil {
+		f.log.Errorw("PostInvoiceToSaleOrder encountered an error: ",
+			"error", err,
+		)
+
 		return err
 
 	}
 
 	err = f.repos.Database.InsertInvoiceToSaleOrder(lastInvoiceId)
 	if err != nil {
+		f.log.Errorw("InsertInvoiceToSaleOrder encountered an error: ",
+			"error", err,
+			"last_invoice_id", lastInvoiceId,
+		)
+
 		return err
 	}
 
@@ -176,6 +238,11 @@ func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) err
 
 	lastSalePaymentId, err := f.repos.Database.GetInvoiceToSalePayment()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+			"last_sale_payment_id", lastSalePaymentId,
+		)
+
 		return err
 	}
 
@@ -189,12 +256,19 @@ func (f *Fararavand) SyncInvoicesWithSalePayment(invoices []models.Invoices) err
 
 		err = f.aryan.PostInvoiceToSalePayment(invoices)
 		if err != nil {
+			f.log.Errorw("PostInvoiceToSalePayment encountered an error: ",
+				"error", err,
+			)
 
 			return err
 		}
 
 		err = f.repos.Database.InsertInvoiceToSalePayment(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertInvoiceToSalePayment encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
 
 			return err
 		}
@@ -214,6 +288,11 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) err
 
 	lastSalerSelectId, err := f.repos.Database.GetInvoiceToSalerSelect()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSalerSelect encountered an error: ",
+			"error", err,
+			"last_saler_select_id", lastSalerSelectId,
+		)
+
 		return err
 	}
 
@@ -227,11 +306,20 @@ func (f *Fararavand) SyncInvoicesWithSalerSelect(invoices []models.Invoices) err
 
 		err := f.aryan.PostInvoiceToSalerSelect(invoices)
 		if err != nil {
+			f.log.Errorw("PostInvoiceToSalerSelect encountered an error: ",
+				"error", err,
+			)
+
 			return err
 		}
 
 		err = f.repos.Database.InsertInvoiceToSalerSelect(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertInvoiceToSalerSelect encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
+
 			return err
 		}
 
@@ -252,6 +340,10 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) er
 
 	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleProforma()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+			"last_sale_proforma_id", lastSaleProformaId,
+		)
 
 		return err
 	}
@@ -266,12 +358,19 @@ func (f *Fararavand) SyncInvoicesWithSaleProforma(invoices []models.Invoices) er
 
 		err := f.aryan.PostInvoiceToSaleProforma(invoices)
 		if err != nil {
+			f.log.Errorw("PostInvoiceToSaleProforma encountered an error: ",
+				"error", err,
+			)
 
 			return err
 		}
 
 		err = f.repos.Database.InsertInvoiceToSaleProforma(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertInvoiceToSaleProforma encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
 
 			return err
 		}
@@ -292,6 +391,10 @@ func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) erro
 
 	lastSaleProformaId, err := f.repos.Database.GetInvoiceToSaleCenter()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleFactor encountered an error: ",
+			"error", err,
+			"last_sale_proforma_id", lastSaleProformaId,
+		)
 
 		return err
 	}
@@ -306,12 +409,19 @@ func (f *Fararavand) SyncInvoicesWithSaleCenter(invoices []models.Invoices) erro
 
 		err := f.aryan.PostInvoiceToSaleCenter(invoices)
 		if err != nil {
+			f.log.Errorw("PostInvoiceToSaleCenter encountered an error: ",
+				"error", err,
+			)
 
 			return err
 		}
 
 		err = f.repos.Database.InsertInvoiceToSaleCenter(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertInvoiceToSaleCenter encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
 
 			return err
 		}
@@ -331,6 +441,10 @@ func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) e
 
 	lastSalerSelectId, err := f.repos.Database.GetInvoiceToSaleTypeSelect()
 	if err != nil {
+		f.log.Errorw("GetInvoiceToSaleTypeSelect encountered an error: ",
+			"error", err,
+			"last_saler_select_id", lastSalerSelectId,
+		)
 
 		return err
 	}
@@ -345,12 +459,19 @@ func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) e
 
 		err := f.aryan.PostInvoiceToSaleTypeSelect(invoices)
 		if err != nil {
+			f.log.Errorw("PostInvoiceToSaleTypeSelect encountered an error: ",
+				"error", err,
+			)
 
 			return err
 		}
 
 		err = f.repos.Database.InsertInvoiceToSaleTypeSelect(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertInvoiceToSaleTypeSelect encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
 
 			return err
 		}
@@ -368,12 +489,14 @@ func (f *Fararavand) SyncInvoiceWithSaleTypeSelect(invoices []models.Invoices) e
 func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) error {
 
 	paymentType := baseData.PaymentTypes
-
 	lastInvoiceId := paymentType[len(paymentType)-1].ID
 
 	lastSalerSelectId, err := f.repos.Database.GetBaseDataToDeliverCenter()
 	if err != nil {
-
+		f.log.Errorw("GetBaseDataToDeliverCenter encountered an error: ",
+			"error", err,
+			"last_saler_select_id", lastSalerSelectId,
+		)
 		return err
 	}
 
@@ -390,12 +513,19 @@ func (f *Fararavand) SyncBaseDataWithDeliverCenter(baseData models.BaseData) err
 
 		err := f.aryan.PostBaseDataToDeliverCenterSaleSelect(baseData)
 		if err != nil {
+			f.log.Errorw("PostBaseDataToDeliverCenterSaleSelect encountered an error: ",
+				"error", err,
+			)
 
 			return err
 		}
 
 		err = f.repos.Database.InsertBaseDataToDeliverCenter(lastInvoiceId)
 		if err != nil {
+			f.log.Errorw("InsertBaseDataToDeliverCenter encountered an error: ",
+				"error", err,
+				"last_invoice_id", lastInvoiceId,
+			)
 
 			return err
 		}
