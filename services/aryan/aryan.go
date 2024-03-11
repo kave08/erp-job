@@ -597,5 +597,34 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error 
 		})
 	}
 
+	body, err := json.Marshal(newSaleSellerVisitor)
+	if err != nil {
+
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+		utility.ASaleSellerVisitor, bytes.NewReader(body))
+	if err != nil {
+
+		return err
+	}
+
+	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+
+	res, err := a.httpClient.Do(req)
+	if err != nil {
+
+		return err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		resBody, _ := io.ReadAll(res.Body)
+
+		return fmt.Errorf("http request failed. status: %d, response: %s", res.StatusCode, resBody)
+	}
+
 	return nil
 }
