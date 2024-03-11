@@ -72,6 +72,8 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	if err != nil {
 		return err
 	}
+	
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)

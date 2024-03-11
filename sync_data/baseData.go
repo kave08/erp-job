@@ -11,13 +11,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 )
-
-var baseDataLastId int
-var baseDataPageNumber int
-var baseDataPageSize int = 1000
-var baseDataMutex *sync.Mutex
 
 // BaseDataResponse is the response for the BaseData
 type BaseDataResponse struct {
@@ -46,47 +40,70 @@ func NewBaseData(repos *repository.Repository, fr fararavand.FararavandInterface
 }
 
 func (b *BaseData) BaseData() error {
+	var lastId int
+	var pageNumber int
+	var pageSize int = 1000
 
-	req, err := http.NewRequest(http.MethodGet, b.baseURL+
-		fmt.Sprintf("/GetBaseData?PageNumeber=%d&PageSize=%d&LastId=%d/", baseDataPageNumber, baseDataPageSize, baseDataLastId), nil)
-	if err != nil {
-		return err
-	}
+	for {
 
-	req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
+		//TODO: select invoice_progress_info last,page_number
+		//TODO: if sql.NoRows {
+		// 	lastId = 0
+		// 	pageNumber = 0
+		// }else {
+		// 	lastId = last_id
+		// 	pageNumber = page_number + page_size + 1
+		// }
 
-	res, err := b.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
+		req, err := http.NewRequest(http.MethodGet, b.baseURL+
+			fmt.Sprintf(GetBaseData, pageNumber, pageSize, lastId), nil)
+		if err != nil {
+			return err
+		}
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
-	}
+		req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
 
-	response := new(BaseDataResponse)
-	err = json.NewDecoder(res.Body).Decode(response)
-	if err != nil {
-		return err
-	}
+		res, err := b.httpClient.Do(req)
+		if err != nil {
+			return err
+		}
 
-	if res.StatusCode != response.Status {
-		return fmt.Errorf("get base data http request failed(body). status: %d, response: %v", response.Status, res.Body)
-	}
+		if res.StatusCode != http.StatusOK {
+			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+		}
 
-	if res.StatusCode != http.StatusOK {
-		log.Printf("status code: %d", res.StatusCode)
-		return fmt.Errorf(utility.ErrNotOk)
-	}
+		response := new(BaseDataResponse)
+		err = json.NewDecoder(res.Body).Decode(response)
+		if err != nil {
+			return err
+		}
 
-	// if request.LastId <= 0 {
-	// 	return fmt.Errorf("validation.required %d", http.StatusBadRequest)
-	// }
+		// if len(response.NewBaseData) == 0 {
+		// 	break
+		// }
 
-	lastId, err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
-	if err != nil {
-		fmt.Println("load SyncBaseDataWithDeliverCenter encountered an error: %w", err)
-		return err
+		if res.StatusCode != response.Status {
+			return fmt.Errorf("get base data http request failed(body). status: %d, response: %v", response.Status, res.Body)
+		}
+
+		if res.StatusCode != http.StatusOK {
+			log.Printf("status code: %d", res.StatusCode)
+			return fmt.Errorf(utility.ErrNotOk)
+		}
+
+		lastId, err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
+		if err != nil {
+			fmt.Println("load SyncBaseDataWithDeliverCenter encountered an error: %w", err)
+			return err
+		}
+
+		// lastId = pageNumber + len(response.NewInvoices)
+		// //TODO: insert in data base last_id, old_page_number is store in invoice_progress_info
+
+		// if len(response.NewInvoices) < pageSize {
+		// 	break
+		// }
+
 	}
 
 	return nil
