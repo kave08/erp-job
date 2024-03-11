@@ -9,7 +9,6 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
-	"erp-job/utility"
 	"fmt"
 	"log"
 	"net/http"
@@ -87,7 +86,7 @@ func (p Product) Products() error {
 		//TODO: fix error
 		if res.StatusCode != http.StatusOK {
 			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(utility.ErrNotOk)
+			return fmt.Errorf(ErrNotOk)
 		}
 
 		err = p.fararavand.SyncProductsWithGoods(response.NewProducts)

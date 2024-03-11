@@ -23,7 +23,3 @@ const (
 	ASaleProforma            = "SaleProforma"
 	ASaleFactor              = "SaleFactor"
 )
-
-const (
-	ErrNotOk = "ErrNotOk"
-)
