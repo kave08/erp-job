@@ -3,6 +3,7 @@ package syncdata
 //rename pkg name
 
 import (
+	"database/sql"
 	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
@@ -46,15 +47,14 @@ func (p Product) Products() error {
 	var pageSize int = 1000
 
 	for {
-
-		//TODO: select invoice_progress_info last,page_number
-		//TODO: if sql.NoRows {
-		// 	lastId = 0
-		// 	pageNumber = 0
-		// }else {
-		// 	lastId = last_id
-		// 	pageNumber = page_number + page_size + 1
-		// }
+		lastProductId, lastPageNumber, err := p.repos.Database.GetProductProgress()
+		if err == sql.ErrNoRows {
+			lastId = 0
+			pageNumber = 0
+		} else {
+			lastId = lastProductId
+			pageNumber = lastPageNumber + pageSize + 1
+		}
 
 		req, err := http.NewRequest(http.MethodGet, p.baseURL+
 			fmt.Sprintf(GetProducts, pageNumber, pageSize, lastId), nil)
@@ -83,7 +83,6 @@ func (p Product) Products() error {
 			break
 		}
 
-		//TODO: fix error
 		if res.StatusCode != http.StatusOK {
 			log.Printf("status code: %d", res.StatusCode)
 			return fmt.Errorf(ErrNotOk)
@@ -95,7 +94,11 @@ func (p Product) Products() error {
 		}
 
 		lastId = pageNumber + len(response.NewProducts)
-		//TODO: insert in data base last_id, old_page_number is store in invoice_progress_info
+
+		err = p.repos.Database.InsertProductProgress(lastId, pageNumber)
+		if err != nil {
+			return err
+		}
 
 		if len(response.NewProducts) < pageSize {
 			break
