@@ -90,7 +90,7 @@ func (p Product) Products() error {
 			return fmt.Errorf(utility.ErrNotOk)
 		}
 
-		lastId, err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
+		err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
 		if err != nil {
 			return fmt.Errorf("load SyncProductsWithGoods encountered an error: %w", err)
 		}

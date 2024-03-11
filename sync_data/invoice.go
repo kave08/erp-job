@@ -87,43 +87,43 @@ func (i *Invoice) Invoices() error {
 			return fmt.Errorf(utility.ErrNotOk)
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSaleFactor encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSaleOrder(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSaleOrder encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSalePayment(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSalePayment encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSalerSelect(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSalerSelect encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSaleProforma(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSaleProforma encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoicesWithSaleCenter(response.NewInvoices)
+		err = i.fararavand.SyncInvoicesWithSaleCenter(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
 			return err
 		}
 
-		_, err = i.fararavand.SyncInvoiceWithSaleTypeSelect(response.NewInvoices)
+		err = i.fararavand.SyncInvoiceWithSaleTypeSelect(response.NewInvoices)
 		if err != nil {
 			fmt.Println("load SyncInvoicesWithSaleCenter encountered an error: %w", err)
 			return err

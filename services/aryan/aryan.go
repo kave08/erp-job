@@ -72,7 +72,7 @@ func (a *Aryan) PostInoviceToSaleFactor(fp []models.Invoices) error {
 	if err != nil {
 		return err
 	}
-	
+
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
@@ -489,11 +489,6 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) error {
 		})
 	}
 
-	// res, err := a.restyClient.R().SetBody(newSaleCenterSelect).Post(utility.ASaleCenterSelect)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	return nil
 }
 
@@ -554,15 +549,6 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error 
 			CentersCode: strconv.Itoa(item.ID),
 		})
 	}
-
-	// res, err := a.restyClient.R().SetBody(newSaleSellerVisitor).Post(utility.ASaleSellerVisitor)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// if res.StatusCode() != http.StatusOK {
-	// 	fmt.Println(res.Body())
-	// }
 
 	return nil
 }
