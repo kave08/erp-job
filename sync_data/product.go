@@ -10,9 +10,12 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility/logger"
 	"fmt"
 	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type ProductResponse struct {
@@ -21,6 +24,7 @@ type ProductResponse struct {
 }
 
 type Product struct {
+	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
@@ -31,6 +35,7 @@ type Product struct {
 func NewProduct(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Product {
 
 	return &Product{
+		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,

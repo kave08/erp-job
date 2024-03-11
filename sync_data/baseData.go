@@ -8,9 +8,12 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility/logger"
 	"fmt"
 	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 // BaseDataResponse is the response for the BaseData
@@ -20,6 +23,7 @@ type BaseDataResponse struct {
 }
 
 type BaseData struct {
+	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
@@ -29,6 +33,7 @@ type BaseData struct {
 
 func NewBaseData(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *BaseData {
 	return &BaseData{
+		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,

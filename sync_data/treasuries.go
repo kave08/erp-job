@@ -5,10 +5,14 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	"erp-job/utility/logger"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type Treasurie struct {
+	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
@@ -18,6 +22,7 @@ type Treasurie struct {
 
 func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Treasurie {
 	return &Treasurie{
+		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
