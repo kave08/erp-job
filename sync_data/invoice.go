@@ -83,6 +83,16 @@ func (i *Invoice) Invoices() error {
 			return err
 		}
 
+		if res.StatusCode != http.StatusOK {
+			i.log.Errorw("get invoice http request failed.",
+				"error", err,
+				"status:", res.StatusCode,
+				"response", res.Body,
+			)
+
+			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+		}
+
 		response := new(InvoiceResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
@@ -97,11 +107,6 @@ func (i *Invoice) Invoices() error {
 
 		if len(response.NewInvoices) == 0 {
 			break
-		}
-
-		if res.StatusCode != http.StatusOK {
-
-			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
 		err = i.fararavand.SyncInvoicesWithSaleFactor(response.NewInvoices)
