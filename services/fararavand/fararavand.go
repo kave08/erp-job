@@ -98,9 +98,9 @@ func (f *Fararavand) SyncProductsWithGoods(products []models.Products) (int, err
 // The function returns a slice of new invoices and an error if any occurs during the process.
 // If the response status code from the Fararavand API is not HTTP 200 OK, it logs the status code and returns an error.
 func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) (int, error) {
-
+	//TODO:check max id
 	lastInvoiceId := invoices[len(invoices)-1].InvoiceId
-
+	//added logger
 	lastSaleFactorId, err := f.repos.Database.GetInvoiceToSaleFactor()
 	if err != nil {
 		return 0, err
