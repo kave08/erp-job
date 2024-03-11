@@ -10,7 +10,6 @@ import (
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
 	"fmt"
-	"log"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -63,6 +62,12 @@ func (b *BaseData) BaseData() error {
 		req, err := http.NewRequest(http.MethodGet, b.baseURL+
 			fmt.Sprintf(GetBaseData, pageNumber, pageSize, lastId), nil)
 		if err != nil {
+			b.log.Errorw("get base data request encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -70,16 +75,33 @@ func (b *BaseData) BaseData() error {
 
 		res, err := b.httpClient.Do(req)
 		if err != nil {
+			b.log.Errorw("get base data response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
 			return err
 		}
 
 		if res.StatusCode != http.StatusOK {
+			b.log.Errorw("get base data http request failed.",
+				"error", err,
+				"status:", res.StatusCode,
+				"response", res.Body,
+			)
+
 			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
 		response := new(BaseDataResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
+			b.log.Errorw("get base data decode response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -87,18 +109,14 @@ func (b *BaseData) BaseData() error {
 			break
 		}
 
-		if res.StatusCode != response.Status {
-			return fmt.Errorf("get base data http request failed(body). status: %d, response: %v", response.Status, res.Body)
-		}
-
-		if res.StatusCode != http.StatusOK {
-			log.Printf("status code: %d", res.StatusCode)
-			return fmt.Errorf(ErrNotOk)
-		}
-
 		err = b.fararavand.SyncBaseDataWithDeliverCenter(response.NewBaseData)
 		if err != nil {
-			fmt.Println("load SyncBaseDataWithDeliverCenter encountered an error: %w", err)
+			b.log.Errorw("load SyncBaseDataWithDeliverCenter encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
@@ -106,6 +124,12 @@ func (b *BaseData) BaseData() error {
 
 		err = b.repos.Database.InsertBaseDataProgress(lastId, pageNumber)
 		if err != nil {
+			b.log.Errorw("InsertBaseDataProgress encountered an error:",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 		if len(response.NewBaseData.PaymentTypes) < pageSize {
