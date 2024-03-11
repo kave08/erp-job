@@ -1,6 +1,7 @@
 package syncdata
 
 import (
+	"database/sql"
 	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
@@ -44,15 +45,14 @@ func (c Customer) Customers() error {
 	var pageSize int = 1000
 
 	for {
-
-		//TODO: select invoice_progress_info last,page_number
-		//TODO: if sql.NoRows {
-		// 	lastId = 0
-		// 	pageNumber = 0
-		// }else {
-		// 	lastId = last_id
-		// 	pageNumber = page_number + page_size + 1
-		// }
+		lastCustomerId, lastPageNumber, err := c.repos.Database.GetCustomerProgress()
+		if err == sql.ErrNoRows {
+			lastId = 0
+			pageNumber = 0
+		} else {
+			lastId = lastCustomerId
+			pageNumber = lastPageNumber + pageSize + 1
+		}
 
 		req, err := http.NewRequest(http.MethodGet, c.baseURL+
 			fmt.Sprintf(GetCustomers, pageNumber, pageSize, lastId), nil)
@@ -93,7 +93,11 @@ func (c Customer) Customers() error {
 		}
 
 		lastId = pageNumber + len(response.NewCustomers)
-		//TODO: insert in data base last_id, old_page_number is store in invoice_progress_info
+
+		err = c.repos.Database.InsertCustomerProgress(lastId, pageNumber)
+		if err != nil {
+			return err
+		}
 
 		if len(response.NewCustomers) < pageSize {
 			break
