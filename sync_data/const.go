@@ -7,6 +7,4 @@ const (
 	GetBaseData       = "/GetBaseData?PageNumeber=%d&PageSize=%d&LastId=%d/"
 	GetTreasuries     = "/GetTreasuries?PageNumeber=%d&PageSize=%d&LastId=%d/"
 	GetInvoiceReturns = "/GetInvoiceReturns?PageNumeber=%d&PageSize=%d&LastId=%d/"
-
-	ErrNotOk = "ErrNotOk"
 )
