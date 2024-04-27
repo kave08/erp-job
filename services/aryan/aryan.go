@@ -12,15 +12,17 @@ import (
 	"strconv"
 )
 
+// Aryan represents the Aryan ERP system's data synchronization service.
 type Aryan struct {
 	httpClient *http.Client
-	baseUrl    string
+	baseURL    string
 	repos      *repository.Repository
 }
 
+// NewAryan initializes and returns a new Aryan service instance.
 func NewAryan(repos *repository.Repository) AryanInterface {
 	return &Aryan{
-		baseUrl: config.Cfg.AryanApp.BaseURL,
+		baseURL: config.Cfg.AryanApp.BaseURL,
 		repos:   repos,
 		httpClient: &http.Client{
 			Timeout: config.Cfg.AryanApp.Timeout,
@@ -28,30 +30,99 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 	}
 }
 
-// PostInvoiceToSaleFactor takes a slice of Invoices and converts them into SaleFactors.
-// Each Invoice is transformed into a SaleFactor by mapping its fields to the corresponding SaleFactor fields.
-// The function then sends a POST request with the slice of SaleFactors as the request body to the sale factor service.
-// The function returns the server response and an error if the request fails.
+// Req defines the structure for a request to the Aryan ERP system.
+type Req struct {
+	ID     string  `json:"id"`
+	Params []Param `json:"Params"`
+}
+
+// Param represents a parameter with a name and an optional value.
+type Param struct {
+	Name  string      `json:"Name"`
+	Value interface{} `json:"Value,omitempty"`
+}
+
+// PostInvoiceToSaleFactor synchronizes invoices by converting them into SaleFactors for the Aryan ERP system.
+//
+// It maps invoice fields to SaleFactor fields and sends a POST request to the sale factor service.
 func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
+	var req = []Req{}
 
 	for _, item := range fp {
-		newSaleFactor = append(newSaleFactor, models.SaleFactor{
-			CustomerId:       item.CustomerID,
-			ServiceGoodsID:   item.ProductID, // ok
-			Quantity:         float64(item.ProductCount),
-			Fee:              float64(item.ProductFee),
-			VoucherDesc:      "ETL-Form Fararavand",
-			SecondNumber:     strconv.Itoa(item.InvoiceId),
-			VoucherDate:      item.InvoiceDate,
-			StockID:          item.WareHouseID,
-			SaleTypeId:       10000001,
-			DeliveryCenterID: 10000002,
-			SaleCenterID:     item.CodeMahal,
-			PaymentWayID:     item.SNoePardakht,
-			SellerID:         item.CCForoshandeh,
-			SaleManID:        item.CodeForoshandeh,
+		req = append(req, Req{
+			ID: "SaleFactor",
+			Params: []Param{
+				{
+					Name:  "CustomerId",
+					Value: item.CustomerID,
+				},
+				{
+					Name:  "VoucherDate",
+					Value: item.InvoiceDate,
+				},
+				{
+					Name:  "StockID",
+					Value: item.WareHouseID,
+				},
+				{
+					Name:  "VoucherDesc",
+					Value: "ETL-Form Fararavand",
+				},
+				{
+					Name:  "SaleTypeId",
+					Value: 10000001,
+				},
+				{
+					Name:  "DeliveryCenterID",
+					Value: 10000002,
+				},
+				{
+					Name:  "SaleCenterID",
+					Value: item.CodeMahal,
+				},
+				{
+					Name:  "PaymentWayID",
+					Value: item.SNoePardakht,
+				},
+				{
+					Name:  "SellerID",
+					Value: item.CCForoshandeh,
+				},
+				{
+					Name:  "SaleManID",
+					Value: item.CodeForoshandeh,
+				},
+				{
+					Name:  "DistributerId",
+					Value: 0,
+				},
+				{
+					Name:  "CustomerId",
+					Value: item.CustomerID,
+				},
+			},
 		})
+
+		//TODO:
+		// ServiceGoodsID:   item.ProductID, // ok
+		// 	Quantity:         float64(item.ProductCount),
+		// 	Fee:              float64(item.ProductFee),
+		// 	VoucherDesc:      "ETL-Form Fararavand",
+		// 	SecondNumber:     strconv.Itoa(item.InvoiceId),
+
+		// newSaleFactor = append(newSaleFactor, models.SaleFactor{
+		// CustomerId:       item.CustomerID,
+
+		// VoucherDate:      item.InvoiceDate,
+		// StockID:          item.WareHouseID,
+		// SaleTypeId:       10000001,
+		// DeliveryCenterID: 10000002,
+		// SaleCenterID:     item.CodeMahal,
+		// PaymentWayID:     item.SNoePardakht,
+		// SellerID:         item.CCForoshandeh,
+		// SaleManID:        item.CodeForoshandeh,
+		// })s
 	}
 
 	body, err := json.Marshal(newSaleFactor)
@@ -59,15 +130,15 @@ func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	request, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleFactor, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
+	request.Header.Set("ApiKey", config.Cfg.AryanApp.APIKey)
 
-	res, err := a.httpClient.Do(req)
+	res, err := a.httpClient.Do(request)
 	if err != nil {
 		return err
 	}
@@ -110,7 +181,7 @@ func (a *Aryan) PostProductsToGoods(fp []models.Products) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		Goods, bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -153,7 +224,7 @@ func (a *Aryan) PostCustomerToSaleCustomer(fc []models.Customers) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleCustomer, bytes.NewReader(body))
 	if err != nil {
 
@@ -210,7 +281,7 @@ func (a *Aryan) PostInvoiceToSaleOrder(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleOrder, bytes.NewReader(body))
 	if err != nil {
 
@@ -255,7 +326,7 @@ func (a *Aryan) PostInvoiceToSalePayment(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SalePaymentSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -302,7 +373,7 @@ func (a *Aryan) PostInvoiceToSaleCenter(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleCenter4SaleSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -353,7 +424,7 @@ func (a *Aryan) PostInvoiceToSalerSelect(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SalerSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -416,7 +487,7 @@ func (a *Aryan) PostInvoiceToSaleProforma(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleProforma, bytes.NewReader(body))
 	if err != nil {
 
@@ -463,7 +534,7 @@ func (a *Aryan) PostInvoiceToSaleTypeSelect(fp []models.Invoices) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleTypeSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -510,7 +581,7 @@ func (a *Aryan) PostBaseDataToSaleCenterSelect(baseData models.BaseData) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleCenterSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -556,7 +627,7 @@ func (a *Aryan) PostBaseDataToDeliverCenterSaleSelect(baseData models.BaseData) 
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		DeliverCenterSaleSelect, bytes.NewReader(body))
 	if err != nil {
 
@@ -602,7 +673,7 @@ func (a *Aryan) PostBaseDataToSaleSellerVisitor(baseData models.BaseData) error 
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, a.baseUrl+
+	req, err := http.NewRequest(http.MethodPost, a.baseURL+
 		SaleSellerVisitor, bytes.NewReader(body))
 	if err != nil {
 
