@@ -91,18 +91,18 @@ type SaleProforma struct {
 }
 
 type SaleFactor struct {
-	CustomerId       int     `json:"customer_id"`
-	VoucherDate      string  `json:"voucher_date"`
+	CustomerID       int     `json:"CustomerId"`
+	VoucherDate      string  `json:"VoucherDate"`
+	StockID          int     `json:"StockID"`
+	VoucherDesc      string  `json:"VoucherDesc"`
+	SaleTypeID       int     `json:"SaleTypeId"`
+	DeliveryCenterID int     `json:"DeliveryCenterID"`
+	SaleCenterID     int     `json:"SaleCenterID"`
+	PaymentWayID     int     `json:"PaymentWayID"`
+	SellerID         int     `json:"SellerID"`
+	SaleManID        int     `json:"SaleManID"`
+	DistributerID    int     `json:"DistributerId"`
 	SecondNumber     string  `json:"second_number"`
-	VoucherDesc      string  `json:"voucher_desc"`
-	StockID          int     `json:"stock_id"`
-	SaleTypeId       int     `json:"sale_type_id"`
-	DeliveryCenterID int     `json:"delivery_center_id"`
-	SaleCenterID     int     `json:"sale_center_id"`
-	PaymentWayID     int     `json:"payment_way_id"`
-	SellerID         int     `json:"seller_id"`
-	SaleManID        int     `json:"sale_man_id"`
-	DistributerId    int     `json:"distributer_id"`
 	ServiceGoodsID   int     `json:"service_goods_id"`
 	Quantity         float64 `json:"quantity"`
 	Fee              float64 `json:"fee"`
