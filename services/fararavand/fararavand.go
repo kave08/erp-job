@@ -19,7 +19,7 @@ type Fararavand struct {
 }
 
 // NewFararavand initializes and returns a new Fararavand service instance.
-func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) FararavandInterface {
+func NewFararavand(repos *repository.Repository, aryan aryan.AryanInterface) Interface {
 	return &Fararavand{
 		log:     logger.Logger(),
 		baseURL: config.Cfg.FararavandApp.BaseURL,

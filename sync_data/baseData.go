@@ -27,10 +27,10 @@ type BaseData struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewBaseData(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *BaseData {
+func NewBaseData(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *BaseData {
 	return &BaseData{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,

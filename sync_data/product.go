@@ -28,10 +28,10 @@ type Product struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewProduct(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Product {
+func NewProduct(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Product {
 
 	return &Product{
 		log:        logger.Logger(),

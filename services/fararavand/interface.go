@@ -2,10 +2,10 @@ package fararavand
 
 import "erp-job/models"
 
-// FararavandInterface defines the contract for interacting with the Fararavand ERP system, including synchronizing customer, product, and invoice data.
+// Interface defines the contract for interacting with the Fararavand ERP system, including synchronizing customer, product, and invoice data.
 //
 // It abstracts the operations for data synchronization between Fararavand and Aryan systems, ensuring data consistency and integrity across both platforms.
-type FararavandInterface interface {
+type Interface interface {
 	// SyncCustomersWithSaleCustomer synchronizes customer data from Fararavand to Aryan by filtering based on the last processed customer ID.
 	//
 	// It updates the database with the latest customer ID processed and logs any errors encountered during the process.

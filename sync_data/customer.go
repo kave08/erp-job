@@ -27,10 +27,10 @@ type Customer struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewCustomer(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Customer {
+func NewCustomer(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Customer {
 	return &Customer{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,

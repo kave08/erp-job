@@ -13,10 +13,10 @@ type Sync struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewSync(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Sync {
+func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Sync {
 	return &Sync{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,

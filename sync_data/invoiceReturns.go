@@ -17,10 +17,10 @@ type InvoiceReturn struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewInvoiceReturn(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *InvoiceReturn {
+func NewInvoiceReturn(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *InvoiceReturn {
 	return &InvoiceReturn{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,

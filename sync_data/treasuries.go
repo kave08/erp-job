@@ -17,10 +17,10 @@ type Treasurie struct {
 	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
-	fararavand fararavand.FararavandInterface
+	fararavand fararavand.Interface
 }
 
-func NewTreasurie(repos *repository.Repository, fr fararavand.FararavandInterface, ar aryan.AryanInterface) *Treasurie {
+func NewTreasurie(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Treasurie {
 	return &Treasurie{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
