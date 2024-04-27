@@ -165,11 +165,11 @@ func (f *Fararavand) SyncInvoicesWithSaleFactor(invoices []models.Invoices) erro
 
 	err = f.repos.Database.InsertInvoiceToSaleFactor(lastInvoiceId)
 	if err != nil {
-		f.log.Errorw("InsertInvoiceToSaleFactor encountered an error: ",
-			"error", err,
-			"last_invoice_id", lastInvoiceId,
-		)
-
+		f.log.Errorw("InsertInvoiceToSaleFactor to encountered an error: ",
+		"type", "database",
+		"error", err,
+		"last_invoice_id", lastInvoiceId,
+	)
 		return err
 	}
 
