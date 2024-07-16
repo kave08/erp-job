@@ -11,9 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 
 	"go.uber.org/zap"
 )
@@ -40,7 +38,7 @@ type Aryan struct {
 }
 
 // NewAryan initializes and returns a new Aryan service instance.
-func NewAryan(repos *repository.Repository) AryanInterface {
+func NewAryan(repos *repository.Repository) Interface {
 	return &Aryan{
 		log:     logger.Logger(),
 		baseURL: config.Cfg.AryanApp.BaseURL,
@@ -49,50 +47,6 @@ func NewAryan(repos *repository.Repository) AryanInterface {
 			Timeout: config.Cfg.AryanApp.Timeout,
 		},
 	}
-}
-
-// Login attempts to log in to the Fararavand ERP system with the provided credentials and place.
-func (a *Aryan) Login(user, pass, place string) error {
-	data := url.Values{}
-	data.Set("user", user)
-	data.Set("pass", pass)
-	data.Set("place", place)
-
-	req, err := http.NewRequest(http.MethodPost, a.baseURL+
-		fmt.Sprintf(common.Login), strings.NewReader(data.Encode()))
-	if err != nil {
-		a.log.Errorw("failed to create login request",
-			"error", err)
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	res, err := a.httpClient.Do(req)
-	if err != nil {
-		a.log.Errorw("failed to send login request",
-			"error", err)
-		return err
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		a.log.Errorw("failed to read login response body",
-			"error", err)
-		return err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		a.log.Errorw("login failed",
-			"status", res.StatusCode,
-			"response", string(body))
-		return fmt.Errorf("login failed with status: %d, response: %s", res.StatusCode, string(body))
-	}
-
-	a.log.Info("Login successful", "response", string(body))
-
-	return nil
 }
 
 // PostInvoiceToSaleFactor synchronizes invoices by converting them into SaleFactors for the Aryan ERP system.
