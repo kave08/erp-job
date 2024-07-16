@@ -38,8 +38,9 @@ type Req struct {
 
 // Param represents a parameter with a name and an optional value.
 type Param struct {
-	Name  string      `json:"Name"`
-	Value interface{} `json:"Value,omitempty"`
+	Name       string      `json:"Name"`
+	Value      interface{} `json:"Value,omitempty"`
+	ArrayValue []interface{}
 }
 
 // PostInvoiceToSaleFactor synchronizes invoices by converting them into SaleFactors for the Aryan ERP system.
@@ -49,13 +50,13 @@ func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
 	var req = []Req{}
 
-	for _, item := range fp {
+	for i, item := range fp {
 		req = append(req, Req{
 			ID: "SaleFactor",
 			Params: []Param{
 				{
 					Name:  "CustomerId",
-					Value: item.CustomerID,
+					Value: &item.CustomerID,
 				},
 				{
 					Name:  "VoucherDate",
@@ -98,8 +99,8 @@ func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 					Value: 0,
 				},
 				{
-					Name:  "CustomerId",
-					Value: item.CustomerID,
+					Name:       "Inserted",
+					ArrayValue: []interface{}{i, item.ProductID, item.ProductCount, item.ProductFee, "شرح تستی", 0},
 				},
 			},
 		})
