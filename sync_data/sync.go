@@ -45,7 +45,6 @@ func (s *Sync) Sync() error {
 
 	// aryan Sync process
 	asyncdata.NewLogin()
-	asyncdata.NewSaleFactor(s.repos, s.aryan)
 
 	return nil
 }
