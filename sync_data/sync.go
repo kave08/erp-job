@@ -5,6 +5,7 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	asyncdata "erp-job/sync_data/aryan"
 	fsyncdata "erp-job/sync_data/fararavand"
 
 	"net/http"
@@ -34,12 +35,16 @@ func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.Ary
 
 // Sync synchronizes data between ERP systems by calling various data synchronization functions.
 func (s *Sync) Sync() error {
+	// fararavnd Sync process
 	fsyncdata.NewInvoice(s.repos, s.fararavand)
 	fsyncdata.NewBaseData(s.repos, s.fararavand)
 	fsyncdata.NewCustomer(s.repos, s.fararavand)
 	fsyncdata.NewInvoiceReturn(s.repos, s.fararavand)
 	fsyncdata.NewProduct(s.repos, s.fararavand)
 	fsyncdata.NewTreasurie(s.repos, s.fararavand)
+
+	// aryan Sync process
+	asyncdata.NewLogin()
 
 	return nil
 }
