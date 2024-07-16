@@ -16,12 +16,12 @@ type Sync struct {
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
-	aryan      aryan.AryanInterface
+	aryan      aryan.Interface
 	fararavand fararavand.Interface
 }
 
 // NewSync creates a new instance of Sync with the necessary configurations and dependencies.
-func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Sync {
+func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.Interface) *Sync {
 	return &Sync{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
@@ -45,6 +45,7 @@ func (s *Sync) Sync() error {
 
 	// aryan Sync process
 	asyncdata.NewLogin()
+	asyncdata.NewSaleFactor(s.repos, s.aryan)
 
 	return nil
 }
