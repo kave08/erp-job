@@ -5,9 +5,12 @@ import (
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
+	fsyncdata "erp-job/sync_data/fararavand"
+
 	"net/http"
 )
 
+// Sync orchestrates the synchronization of data between ERP systems.
 type Sync struct {
 	baseURL    string
 	httpClient *http.Client
@@ -16,6 +19,7 @@ type Sync struct {
 	fararavand fararavand.Interface
 }
 
+// NewSync creates a new instance of Sync with the necessary configurations and dependencies.
 func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Sync {
 	return &Sync{
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
@@ -28,13 +32,14 @@ func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.Ary
 	}
 }
 
+// Sync synchronizes data between ERP systems by calling various data synchronization functions.
 func (s *Sync) Sync() error {
-	NewInvoice(s.repos, s.fararavand, s.aryan)
-	NewBaseData(s.repos, s.fararavand, s.aryan)
-	NewCustomer(s.repos, s.fararavand, s.aryan)
-	NewInvoiceReturn(s.repos, s.fararavand, s.aryan)
-	NewProduct(s.repos, s.fararavand, s.aryan)
-	NewTreasurie(s.repos, s.fararavand, s.aryan)
+	fsyncdata.NewInvoice(s.repos, s.fararavand)
+	fsyncdata.NewBaseData(s.repos, s.fararavand)
+	fsyncdata.NewCustomer(s.repos, s.fararavand)
+	fsyncdata.NewInvoiceReturn(s.repos, s.fararavand)
+	fsyncdata.NewProduct(s.repos, s.fararavand)
+	fsyncdata.NewTreasurie(s.repos, s.fararavand)
 
 	return nil
 }

@@ -1,12 +1,12 @@
-package syncdata
+package fsyncdata
 
 import (
 	"database/sql"
 	"encoding/json"
+	"erp-job/common"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
-	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
 	"fmt"
@@ -26,16 +26,14 @@ type Invoice struct {
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
-	aryan      aryan.AryanInterface
 	fararavand fararavand.Interface
 }
 
-func NewInvoice(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Invoice {
+func NewInvoice(repos *repository.Repository, fr fararavand.Interface) *Invoice {
 	return &Invoice{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
-		aryan:      ar,
 		fararavand: fr,
 		httpClient: &http.Client{
 			Timeout: config.Cfg.FararavandApp.Timeout,
@@ -59,7 +57,7 @@ func (i *Invoice) Invoices() error {
 		}
 
 		req, err := http.NewRequest(http.MethodGet, i.baseURL+
-			fmt.Sprintf(GetInvoices, pageNumber, pageSize, lastId), nil)
+			fmt.Sprintf(common.GetInvoices, pageNumber, pageSize, lastId), nil)
 		if err != nil {
 			i.log.Errorw("get invoice request encountered an error: ",
 				"error", err,

@@ -1,12 +1,12 @@
-package syncdata
+package fsyncdata
 
 import (
 	"database/sql"
 	"encoding/json"
+	"erp-job/common"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
-	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
 	"fmt"
@@ -26,17 +26,14 @@ type BaseData struct {
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
-	aryan      aryan.AryanInterface
 	fararavand fararavand.Interface
 }
 
-func NewBaseData(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *BaseData {
+func NewBaseData(repos *repository.Repository, fr fararavand.Interface) *BaseData {
 	return &BaseData{
-		log:        logger.Logger(),
-		baseURL:    config.Cfg.FararavandApp.BaseURL,
-		repos:      repos,
-		aryan:      ar,
-		fararavand: fr,
+		log:     logger.Logger(),
+		baseURL: config.Cfg.FararavandApp.BaseURL,
+		repos:   repos,
 		httpClient: &http.Client{
 			Timeout: config.Cfg.FararavandApp.Timeout,
 		},
@@ -60,7 +57,7 @@ func (b *BaseData) BaseData() error {
 		}
 
 		req, err := http.NewRequest(http.MethodGet, b.baseURL+
-			fmt.Sprintf(GetBaseData, pageNumber, pageSize, lastId), nil)
+			fmt.Sprintf(common.GetBaseData, pageNumber, pageSize, lastId), nil)
 		if err != nil {
 			b.log.Errorw("get base data request encountered an error: ",
 				"error", err,

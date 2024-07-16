@@ -1,12 +1,14 @@
-package syncdata
+package fsyncdata
+
+//rename pkg name
 
 import (
 	"database/sql"
 	"encoding/json"
+	"erp-job/common"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
-	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
 	"fmt"
@@ -15,27 +17,25 @@ import (
 	"go.uber.org/zap"
 )
 
-// CustomerResponse is the response for the customer
-type CustomerResponse struct {
-	Status       int                `json:"status"`
-	NewCustomers []models.Customers `json:"new_customer"`
+type ProductResponse struct {
+	Status      int               `json:"status"`
+	NewProducts []models.Products `json:"new_products"`
 }
 
-type Customer struct {
+type Product struct {
 	log        *zap.SugaredLogger
 	baseURL    string
 	httpClient *http.Client
 	repos      *repository.Repository
-	aryan      aryan.AryanInterface
 	fararavand fararavand.Interface
 }
 
-func NewCustomer(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Customer {
-	return &Customer{
+func NewProduct(repos *repository.Repository, fr fararavand.Interface) *Product {
+
+	return &Product{
 		log:        logger.Logger(),
 		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
-		aryan:      ar,
 		fararavand: fr,
 		httpClient: &http.Client{
 			Timeout: config.Cfg.FararavandApp.Timeout,
@@ -43,25 +43,25 @@ func NewCustomer(repos *repository.Repository, fr fararavand.Interface, ar aryan
 	}
 }
 
-func (c Customer) Customers() error {
+func (p Product) Products() error {
 	var lastId int
 	var pageNumber int
 	var pageSize int = 1000
 
 	for {
-		lastCustomerId, lastPageNumber, err := c.repos.Database.GetCustomerProgress()
+		lastProductId, lastPageNumber, err := p.repos.Database.GetProductProgress()
 		if err == sql.ErrNoRows {
 			lastId = 0
 			pageNumber = 0
 		} else {
-			lastId = lastCustomerId
+			lastId = lastProductId
 			pageNumber = lastPageNumber + pageSize + 1
 		}
 
-		req, err := http.NewRequest(http.MethodGet, c.baseURL+
-			fmt.Sprintf(GetCustomers, pageNumber, pageSize, lastId), nil)
+		req, err := http.NewRequest(http.MethodGet, p.baseURL+
+			fmt.Sprintf(common.GetProducts, pageNumber, pageSize, lastId), nil)
 		if err != nil {
-			c.log.Errorw("get customer request encountered an error: ",
+			p.log.Errorw("get product request encountered an error: ",
 				"error", err,
 				"last_id", lastId,
 				"page_number", pageNumber,
@@ -72,39 +72,46 @@ func (c Customer) Customers() error {
 
 		req.Header.Set("ApiKey", config.Cfg.FararavandApp.APIKey)
 
-		res, err := c.httpClient.Do(req)
+		res, err := p.httpClient.Do(req)
 		if err != nil {
+			p.log.Errorw("get product response encountered an error: ",
+				"error", err,
+				"last_id", lastId,
+				"page_number", pageNumber,
+			)
+
 			return err
 		}
 
 		if res.StatusCode != http.StatusOK {
-			c.log.Errorw("get customer http request failed.",
+			p.log.Errorw("get product http request failed.",
 				"error", err,
 				"status:", res.StatusCode,
 				"response", res.Body,
 			)
 
-			return fmt.Errorf("get customer http request failed. status: %d, response: %v", res.StatusCode, res.Body)
+			return fmt.Errorf("get product http request failed. status: %d, response: %v", res.StatusCode, res.Body)
 		}
 
-		response := new(CustomerResponse)
+		response := new(ProductResponse)
 		err = json.NewDecoder(res.Body).Decode(response)
 		if err != nil {
-			c.log.Errorw("get customer decode response encountered an error: ",
+			p.log.Errorw("get product decode response encountered an error: ",
 				"error", err,
 				"last_id", lastId,
 				"page_number", pageNumber,
 			)
+
 			return err
 		}
 
-		if len(response.NewCustomers) == 0 {
+		if len(response.NewProducts) == 0 {
 			break
 		}
 
-		err = c.fararavand.SyncCustomersWithSaleCustomer(response.NewCustomers)
+		err = p.fararavand.SyncProductsWithGoods(response.NewProducts)
 		if err != nil {
-			c.log.Errorw("load SyncCustomersWithSaleCustomer encountered an error:",
+			p.log.Errorw("load SyncProductsWithGoods encountered an error:",
 				"error", err,
 				"last_id", lastId,
 				"page_number", pageNumber,
@@ -113,11 +120,11 @@ func (c Customer) Customers() error {
 			return err
 		}
 
-		lastId = pageNumber + len(response.NewCustomers)
+		lastId = pageNumber + len(response.NewProducts)
 
-		err = c.repos.Database.InsertCustomerProgress(lastId, pageNumber)
+		err = p.repos.Database.InsertProductProgress(lastId, pageNumber)
 		if err != nil {
-			c.log.Errorw("load InsertCustomerProgress encountered an error:",
+			p.log.Errorw("InsertProductProgress encountered an error:",
 				"error", err,
 				"last_id", lastId,
 				"page_number", pageNumber,
@@ -126,9 +133,10 @@ func (c Customer) Customers() error {
 			return err
 		}
 
-		if len(response.NewCustomers) < pageSize {
+		if len(response.NewProducts) < pageSize {
 			break
 		}
+
 	}
 
 	return nil
