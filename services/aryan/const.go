@@ -14,4 +14,5 @@ const (
 	Goods                   = "Goods"
 	SaleProforma            = "SaleProforma"
 	SaleFactor              = "SaleFactor"
+	Login                   = "Api/Api/login"
 )
