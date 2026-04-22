@@ -37,6 +37,36 @@ Run the application with the following command:
 
 sh ./erp-job [transfer]
 
+## Docker
+
+This application runs as a one-shot sync job, so the container starts `erp-job transfer` and exits when the sync finishes.
+
+### Build the image
+
+```sh
+docker build -t erp-job:local .
+```
+
+### Run with a mounted config file
+
+```sh
+docker run --rm \
+  --read-only \
+  --tmpfs /tmp \
+  -v "$(pwd)/env.yml:/config/env.yml:ro" \
+  erp-job:local
+```
+
+### Run with Docker Compose
+
+`compose.yaml` mounts `./env.yml` into `/config/env.yml` and keeps the container filesystem read-only except for `/tmp`.
+
+```sh
+docker compose run --rm erp-job
+```
+
+Use [`env.example.yml`](env.example.yml) as the template for the mounted configuration. In containers, `APP.LOG_PATH: "/tmp/erp-job-logs"` is a safe default if file logs are needed; stdout logging is enabled either way.
+
 
 ## Modules
 

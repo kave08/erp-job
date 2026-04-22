@@ -1,0 +1,18 @@
+services:
+  erp-job:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: erp-job:local
+    command: ["transfer", "--config-path", "/config/env.yml"]
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TZ: UTC
+    volumes:
+      - ./env.yml:/config/env.yml:ro

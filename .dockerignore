@@ -1,0 +1,12 @@
+.git
+.vscode
+bin
+dist
+tmp
+.DS_Store
+env.yml
+*.local.yml
+coverage.out
+review.md
+AGENTS.md
+1.md
