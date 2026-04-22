@@ -258,6 +258,11 @@ func (j *Job) runProducts(ctx context.Context) error {
 	})
 }
 
+// runBaseData syncs only PaymentTypes to the DeliverCenter_SaleSelect endpoint.
+// Fararavand's BaseData contains many reference types (WareHouses, CustomerTypes,
+// Units, etc.), but the current Aryan integration only requires PaymentTypes for
+// delivery center mapping. If additional base data types need to be synced in the
+// future, extend this function with new operations and target endpoints.
 func (j *Job) runBaseData(ctx context.Context) error {
 	return runEntitySync(j, ctx, store.EntityBaseData, func(ctx context.Context, pageNumber, pageSize, lastID int) ([]struct {
 		ID   int    `json:"id"`
@@ -317,9 +322,21 @@ func runEntitySync[T any](j *Job, ctx context.Context, entity store.Entity, fetc
 			return nil
 		}
 
+		batchFirstID := sourceCursorFn(items[0])
 		batchLastID := sourceCursorFn(items[len(items)-1])
 		if batchLastID <= lastSourceID {
 			return fmt.Errorf("%s cursor did not advance: last_source_id=%d batch_last_id=%d", entity, lastSourceID, batchLastID)
+		}
+
+		if j.log != nil {
+			j.log.Infow("fetched source batch",
+				"run_id", observability.RunIDFromContext(ctx),
+				"entity", string(entity),
+				"batch_size", len(items),
+				"batch_first_id", batchFirstID,
+				"batch_last_id", batchLastID,
+				"checkpoint_before", lastSourceID,
+			)
 		}
 
 		j.telemetry.RecordFetched(ctx, string(entity), len(items))
@@ -419,7 +436,8 @@ func deliverBatch[T any](j *Job, ctx context.Context, step, name string, operati
 
 func withDeliveryObserver[T any](ctx context.Context, checkpointStore store.CheckpointStore, log *zap.SugaredLogger, operation store.Operation, candidates []deliveryCandidate[T]) context.Context {
 	return observability.WithAttemptObserver(ctx, func(attempt observability.HTTPAttempt) {
-		recordCtx := context.WithoutCancel(ctx)
+		recordCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
 		for _, candidate := range candidates {
 			status := store.DeliveryStatusSucceeded
 			errorMessage := ""

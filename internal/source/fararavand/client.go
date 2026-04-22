@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	getProductsPath  = "/GetProducts?PageNumeber=%d&PageSize=%d&LastId=%d/"
-	getInvoicesPath  = "/GetInvoices?PageNumeber=%d&PageSize=%d&LastId=%d/"
-	getCustomersPath = "/GetCustomers?PageNumeber=%d&PageSize=%d&LastId=%d/"
-	getBaseDataPath  = "/GetBaseData?PageNumeber=%d&PageSize=%d&LastId=%d/"
+	getProductsPath  = "/GetProducts?PageNumber=%d&PageSize=%d&LastId=%d/"
+	getInvoicesPath  = "/GetInvoices?PageNumber=%d&PageSize=%d&LastId=%d/"
+	getCustomersPath = "/GetCustomers?PageNumber=%d&PageSize=%d&LastId=%d/"
+	getBaseDataPath  = "/GetBaseData?PageNumber=%d&PageSize=%d&LastId=%d/"
 )
 
 type Client struct {
@@ -160,9 +160,15 @@ func (c *Client) getOnce(ctx context.Context, path string, target interface{}) (
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		body, _ := io.ReadAll(res.Body)
 		return res.StatusCode, fmt.Errorf("fararavand request failed. status: %d, response: %s", res.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	contentType := res.Header.Get("Content-Type")
+	if !strings.Contains(contentType, "application/json") {
+		body, _ := io.ReadAll(res.Body)
+		return res.StatusCode, fmt.Errorf("fararavand returned non-JSON response (content-type: %s): %s", contentType, strings.TrimSpace(string(body)))
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(target); err != nil {

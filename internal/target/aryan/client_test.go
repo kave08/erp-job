@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"erp-job/internal/circuitbreaker"
 	"erp-job/internal/config"
 	"erp-job/internal/domain"
 	"erp-job/internal/observability"
@@ -23,7 +25,7 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}
 
 	var received []domain.SaleFactor
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			if r.URL.Path != "/SaleFactor" {
@@ -114,7 +116,7 @@ func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
 	}
 
 	var received []domain.SaleOrder
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
@@ -168,7 +170,7 @@ func TestPostInvoiceToSaleProformaAlignsReferenceIDs(t *testing.T) {
 	}
 
 	var received []domain.SaleProforma
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
@@ -216,7 +218,7 @@ func TestPostInvoiceToSalePaymentUsesSNoePardakht(t *testing.T) {
 	}
 
 	var received []domain.SalePaymentSelect
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
@@ -248,7 +250,7 @@ func TestPostInvoiceToSalerSelectRejectsInvalidVisitorCodeBeforeHTTP(t *testing.
 	}
 
 	requests := 0
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
 			requests++
@@ -274,7 +276,7 @@ func TestPostInvoiceToSaleTypeSelectUsesStableCodeFromSNoePardakht(t *testing.T)
 	}
 
 	var received []domain.SaleTypeSelect
-	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
@@ -318,7 +320,7 @@ func TestPostInvoiceToSaleFactorRetriesTransientFailure(t *testing.T) {
 		MaxBackoff:     0,
 		Multiplier:     1,
 		Jitter:         0,
-	})
+	}, circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
 			attempts++
@@ -353,7 +355,7 @@ func TestPostInvoiceToSaleFactorDoesNotRetryPermanentFailure(t *testing.T) {
 		MaxBackoff:     0,
 		Multiplier:     1,
 		Jitter:         0,
-	})
+	}, circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
 			attempts++

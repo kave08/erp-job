@@ -36,8 +36,11 @@ type Telemetry struct {
 	failuresTotal       metric.Int64Counter
 	checkpointLag       metric.Int64Histogram
 	lastSuccessGauge    metric.Int64ObservableGauge
+	currentLagGauge     metric.Int64ObservableGauge
 
-	lastSuccessUnix atomic.Int64
+	lastSuccessUnix  atomic.Int64
+	currentLag       atomic.Int64
+	currentLagEntity atomic.Value
 }
 
 type HTTPAttempt struct {
@@ -149,14 +152,22 @@ func (t *Telemetry) initInstruments() error {
 	if t.lastSuccessGauge, err = t.meter.Int64ObservableGauge("erp_job_last_success_timestamp"); err != nil {
 		return fmt.Errorf("create last_success_timestamp gauge: %w", err)
 	}
+	if t.currentLagGauge, err = t.meter.Int64ObservableGauge("erp_job_current_checkpoint_lag"); err != nil {
+		return fmt.Errorf("create current_checkpoint_lag gauge: %w", err)
+	}
 
 	if _, err := t.meter.RegisterCallback(func(_ context.Context, observer metric.Observer) error {
 		value := t.lastSuccessUnix.Load()
 		if value > 0 {
 			observer.ObserveInt64(t.lastSuccessGauge, value)
 		}
+		lag := t.currentLag.Load()
+		entity, _ := t.currentLagEntity.Load().(string)
+		if lag > 0 && entity != "" {
+			observer.ObserveInt64(t.currentLagGauge, lag, metric.WithAttributes(attribute.String("entity", entity)))
+		}
 		return nil
-	}, t.lastSuccessGauge); err != nil {
+	}, t.lastSuccessGauge, t.currentLagGauge); err != nil {
 		return fmt.Errorf("register telemetry callback: %w", err)
 	}
 
@@ -216,6 +227,8 @@ func (t *Telemetry) RecordFailure(ctx context.Context, endpointGroup string, ope
 
 func (t *Telemetry) RecordCheckpointLag(ctx context.Context, entity string, lag int) {
 	t.checkpointLag.Record(ctx, int64(lag), metric.WithAttributes(attribute.String("entity", entity)))
+	t.currentLag.Store(int64(lag))
+	t.currentLagEntity.Store(entity)
 }
 
 func WithAttemptObserver(ctx context.Context, observer AttemptObserver) context.Context {

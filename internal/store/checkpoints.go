@@ -32,9 +32,10 @@ const (
 type DeliveryStatus string
 
 const (
-	DeliveryStatusFailed    DeliveryStatus = "failed"
-	DeliveryStatusSucceeded DeliveryStatus = "succeeded"
-	DeliveryStatusDelivered DeliveryStatus = "delivered"
+	DeliveryStatusFailed           DeliveryStatus = "failed"
+	DeliveryStatusSucceeded        DeliveryStatus = "succeeded"
+	DeliveryStatusDelivered        DeliveryStatus = "delivered"
+	DeliveryStatusPermanentFailure DeliveryStatus = "permanent_failure"
 )
 
 type DeliveryAttempt struct {
@@ -54,11 +55,18 @@ type DeliveredRecord struct {
 	DeliveredAt  time.Time
 }
 
+type EntityAttemptCount struct {
+	EntityKey    string
+	AttemptCount int
+}
+
 type CheckpointStore interface {
 	GetSourceProgress(ctx context.Context, entity Entity) (int, error)
 	AdvanceSourceProgress(ctx context.Context, entity Entity, lastSourceID int) error
 	GetOperationCheckpoint(ctx context.Context, operation Operation) (int, error)
 	GetDeliveredEntityKeys(ctx context.Context, operation Operation, entityKeys []string) (map[string]struct{}, error)
+	GetAttemptCounts(ctx context.Context, operation Operation, entityKeys []string) (map[string]int, error)
 	RecordDeliveryAttempt(ctx context.Context, attempt DeliveryAttempt) error
 	MarkBatchDelivered(ctx context.Context, operation Operation, lastSourceID int, records []DeliveredRecord) error
+	MarkPermanentFailures(ctx context.Context, operation Operation, entityKeys []string) error
 }

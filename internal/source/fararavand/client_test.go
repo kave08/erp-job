@@ -104,9 +104,11 @@ func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func newResponse(statusCode int, body string) *http.Response {
+	headers := make(http.Header)
+	headers.Set("Content-Type", "application/json")
 	return &http.Response{
 		StatusCode: statusCode,
-		Header:     make(http.Header),
+		Header:     headers,
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }

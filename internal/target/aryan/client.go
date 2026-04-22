@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"erp-job/internal/circuitbreaker"
 	"erp-job/internal/config"
 	"erp-job/internal/domain"
 	"erp-job/internal/observability"
@@ -41,13 +43,14 @@ type Client struct {
 	retryPolicy retry.Policy
 	telemetry   *observability.Telemetry
 	log         *zap.SugaredLogger
+	breaker     *circuitbreaker.Breaker
 }
 
 func NewClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap.SugaredLogger) *Client {
-	return newClient(cfg, telemetry, log, retry.DefaultPolicy())
+	return newClient(cfg, telemetry, log, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 }
 
-func newClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap.SugaredLogger, policy retry.Policy) *Client {
+func newClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap.SugaredLogger, policy retry.Policy, breaker *circuitbreaker.Breaker) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(cfg.BaseURL, "/") + "/",
 		apiKey:  cfg.APIKey,
@@ -57,6 +60,7 @@ func newClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap
 		retryPolicy: policy,
 		telemetry:   telemetry,
 		log:         log,
+		breaker:     breaker,
 	}
 }
 
@@ -195,8 +199,8 @@ func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domai
 		}
 		payload = append(payload, domain.SaleProforma{
 			CustomerId:       item.CustomerID,
-			VoucherDate:      item.Date,
-			SecondNumber:     strconv.Itoa(item.InvoiceId),
+			VoucherDate:      item.InvoiceDate,
+			SecondNumber:     item.InvoiceId,
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
 			SaleTypeId:       item.SNoePardakht,
@@ -261,6 +265,11 @@ func (c *Client) postJSON(ctx context.Context, endpoint string, payload interfac
 	)
 	defer span.End()
 
+	if !c.breaker.Allow() {
+		c.telemetry.RecordFailure(ctx, "aryan", endpoint, 0, "circuit_breaker_open")
+		return fmt.Errorf("aryan %s: %w", endpoint, circuitbreaker.ErrOpen)
+	}
+
 	attemptObserver := observability.AttemptObserverFromContext(ctx)
 	observer := func(attempt retry.Attempt) {
 		observability.LogHTTPAttempt(c.log, ctx, "aryan", endpoint, attempt)
@@ -286,12 +295,14 @@ func (c *Client) postJSON(ctx context.Context, endpoint string, payload interfac
 		return c.postJSONOnce(ctx, endpoint, payload)
 	})
 	if err != nil {
+		c.breaker.RecordFailure()
 		span.SetAttributes(attribute.Int("http.status_code", result.StatusCode))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
+	c.breaker.RecordSuccess()
 	span.SetAttributes(attribute.Int("http.status_code", result.StatusCode))
 	return nil
 }
@@ -316,7 +327,7 @@ func (c *Client) postJSONOnce(ctx context.Context, endpoint string, payload inte
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
 		resBody, _ := io.ReadAll(res.Body)
 		return res.StatusCode, fmt.Errorf("aryan request failed. status: %d, response: %s", res.StatusCode, strings.TrimSpace(string(resBody)))
 	}

@@ -273,6 +273,11 @@ func (f *fakeStore) RecordDeliveryAttempt(_ context.Context, attempt store.Deliv
 	return nil
 }
 
+func (f *fakeStore) GetAttemptCounts(_ context.Context, _ store.Operation, entityKeys []string) (map[string]int, error) {
+	counts := make(map[string]int, len(entityKeys))
+	return counts, nil
+}
+
 func (f *fakeStore) MarkBatchDelivered(_ context.Context, operation store.Operation, lastSourceID int, records []store.DeliveredRecord) error {
 	if lastSourceID > f.operationCheckpoints[operation] {
 		f.operationCheckpoints[operation] = lastSourceID
@@ -283,6 +288,10 @@ func (f *fakeStore) MarkBatchDelivered(_ context.Context, operation store.Operat
 	for _, record := range records {
 		f.deliveredKeys[operation][record.EntityKey] = struct{}{}
 	}
+	return nil
+}
+
+func (f *fakeStore) MarkPermanentFailures(_ context.Context, _ store.Operation, _ []string) error {
 	return nil
 }
 

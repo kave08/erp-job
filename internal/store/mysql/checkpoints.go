@@ -85,6 +85,19 @@ ON DUPLICATE KEY UPDATE
 	delivered_at = VALUES(delivered_at),
 	updated_at = VALUES(updated_at);
 `
+	getAttemptCountsQuery = `
+SELECT entity_key, attempt_count
+FROM delivery_state
+WHERE operation_name = ?
+  AND entity_key IN (%s);
+`
+	markPermanentFailuresQuery = `
+UPDATE delivery_state
+SET status = ?,
+    updated_at = ?
+WHERE operation_name = ?
+  AND entity_key IN (%s);
+`
 )
 
 var tracer = otel.Tracer("erp-job/store/mysql")
@@ -328,6 +341,84 @@ func nullableString(value string) interface{} {
 	}
 
 	return value
+}
+
+func (c *Checkpoints) GetAttemptCounts(ctx context.Context, operation store.Operation, entityKeys []string) (map[string]int, error) {
+	ctx, span := tracer.Start(ctx, "store.get_attempt_counts")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", string(operation)),
+		attribute.Int("entity_key_count", len(entityKeys)),
+	)
+
+	counts := make(map[string]int, len(entityKeys))
+	if len(entityKeys) == 0 {
+		return counts, nil
+	}
+
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(entityKeys)), ",")
+	query := fmt.Sprintf(getAttemptCountsQuery, placeholders)
+
+	args := make([]interface{}, 0, len(entityKeys)+1)
+	args = append(args, string(operation))
+	for _, entityKey := range entityKeys {
+		args = append(args, entityKey)
+	}
+
+	rows, err := c.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("get attempt counts for %s: %w", operation, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var entityKey string
+		var attemptCount int
+		if err := rows.Scan(&entityKey, &attemptCount); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("scan attempt count for %s: %w", operation, err)
+		}
+		counts[entityKey] = attemptCount
+	}
+
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("iterate attempt counts for %s: %w", operation, err)
+	}
+
+	return counts, nil
+}
+
+func (c *Checkpoints) MarkPermanentFailures(ctx context.Context, operation store.Operation, entityKeys []string) error {
+	ctx, span := tracer.Start(ctx, "store.mark_permanent_failures")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", string(operation)),
+		attribute.Int("entity_key_count", len(entityKeys)),
+	)
+
+	if len(entityKeys) == 0 {
+		return nil
+	}
+
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(entityKeys)), ",")
+	query := fmt.Sprintf(markPermanentFailuresQuery, placeholders)
+
+	args := make([]interface{}, 0, len(entityKeys)+3)
+	args = append(args, string(store.DeliveryStatusPermanentFailure), time.Now().UTC(), string(operation))
+	for _, entityKey := range entityKeys {
+		args = append(args, entityKey)
+	}
+
+	if _, err := c.db.ExecContext(ctx, query, args...); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("mark permanent failures for %s: %w", operation, err)
+	}
+
+	return nil
 }
 
 func recordSpanError(span trace.Span, err error) {
