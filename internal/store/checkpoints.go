@@ -38,26 +38,27 @@ const (
 )
 
 type DeliveryAttempt struct {
-	Operation   Operation
-	SourceID    int
-	DedupeKey   string
-	Status      DeliveryStatus
-	HTTPStatus  int
-	Error       string
-	AttemptedAt time.Time
+	Operation    Operation
+	SourceCursor int
+	EntityKey    string
+	Status       DeliveryStatus
+	HTTPStatus   int
+	Error        string
+	AttemptedAt  time.Time
 }
 
 type DeliveredRecord struct {
-	SourceID    int
-	DedupeKey   string
-	HTTPStatus  int
-	DeliveredAt time.Time
+	SourceCursor int
+	EntityKey    string
+	HTTPStatus   int
+	DeliveredAt  time.Time
 }
 
 type CheckpointStore interface {
 	GetSourceProgress(ctx context.Context, entity Entity) (int, error)
 	AdvanceSourceProgress(ctx context.Context, entity Entity, lastSourceID int) error
 	GetOperationCheckpoint(ctx context.Context, operation Operation) (int, error)
+	GetDeliveredEntityKeys(ctx context.Context, operation Operation, entityKeys []string) (map[string]struct{}, error)
 	RecordDeliveryAttempt(ctx context.Context, attempt DeliveryAttempt) error
 	MarkBatchDelivered(ctx context.Context, operation Operation, lastSourceID int, records []DeliveredRecord) error
 }

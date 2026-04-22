@@ -8,12 +8,12 @@ import (
 )
 
 func RunMigrations(ctx context.Context, configPath string) error {
-	cfg, err := config.Load(configPath)
+	databaseConfig, err := config.LoadDatabase(configPath)
 	if err != nil {
 		return err
 	}
 
-	db, err := database.OpenMySQL(cfg.Database)
+	db, err := database.OpenMySQL(databaseConfig)
 	if err != nil {
 		return err
 	}

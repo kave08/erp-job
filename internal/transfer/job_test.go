@@ -37,75 +37,134 @@ func TestTrimAfterCheckpointReturnsNilWhenBatchAlreadySynced(t *testing.T) {
 	}
 }
 
-func TestJobUsesLastSourceIDProgressAndPersistsDeliveredRecords(t *testing.T) {
+func TestJobRunsMasterDataBeforeInvoicesAndInvoiceReferencesBeforeDocuments(t *testing.T) {
 	t.Parallel()
 
-	telemetry := testTransferTelemetry(t)
-	checkpoints := newFakeStore()
-	source := &fakeSource{
+	job, _, target := newTestJob(t)
+	job.source = &fakeSource{
 		invoices: map[int][]domain.Invoices{
 			0: {
-				{InvoiceId: 10, ProductID: 100, PaymentTypeID: 7, VisitorCode: "12", WareHouseID: 20, SNoePardakht: 30},
-				{InvoiceId: 20, ProductID: 101, PaymentTypeID: 8, VisitorCode: "13", WareHouseID: 21, SNoePardakht: 31},
+				{InvoiceId: 10, CustomerID: 1, ProductID: 100, VisitorCode: "12", WareHouseID: 20, SNoePardakht: 30},
 			},
-			20: nil,
+			10: nil,
+		},
+		customers: map[int][]domain.Customers{
+			0: {{ID: 1, Code: 11}},
+			1: nil,
+		},
+		products: map[int][]domain.Products{
+			0:   {{ID: 100, Code: "P-100"}},
+			100: nil,
+		},
+		baseData: map[int]domain.BaseData{
+			0: {
+				PaymentTypes: []struct {
+					ID   int    `json:"id"`
+					Name string `json:"name"`
+				}{{ID: 30, Name: "cash"}},
+			},
+			30: {},
 		},
 	}
-	target := newFakeTarget(true, "")
 
-	job := NewJob(checkpoints, source, target, nil, telemetry)
-	ctx := observability.WithRunID(context.Background(), "run-1")
-	if err := job.Run(ctx); err != nil {
+	if err := job.Run(observability.WithRunID(context.Background(), "run-order")); err != nil {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	if got := checkpoints.sourceProgress[store.EntityInvoice]; got != 20 {
-		t.Fatalf("expected invoice source progress 20, got %d", got)
+	expected := []string{
+		string(store.OperationBaseDataDeliverCenter),
+		string(store.OperationCustomerSaleCustomer),
+		string(store.OperationProductsGoods),
+		string(store.OperationInvoiceSalePayment),
+		string(store.OperationInvoiceSaleCenter),
+		string(store.OperationInvoiceSalerSelect),
+		string(store.OperationInvoiceSaleTypeSelect),
+		string(store.OperationInvoiceSaleFactor),
+		string(store.OperationInvoiceSaleOrder),
+		string(store.OperationInvoiceSaleProforma),
 	}
-
-	if got := checkpoints.operationCheckpoints[store.OperationInvoiceSaleFactor]; got != 20 {
-		t.Fatalf("expected sale factor checkpoint 20, got %d", got)
+	if len(target.calls) != len(expected) {
+		t.Fatalf("unexpected call count: got %d want %d (%#v)", len(target.calls), len(expected), target.calls)
 	}
-
-	if got := len(checkpoints.deliveryAttempts); got == 0 {
-		t.Fatal("expected delivery attempts to be persisted")
+	for index, call := range expected {
+		if target.calls[index] != call {
+			t.Fatalf("unexpected call order at %d: got %q want %q", index, target.calls[index], call)
+		}
 	}
 }
 
-func TestJobSkipsRecordsAlreadyBehindOperationCheckpoint(t *testing.T) {
+func TestInvoiceOperationsDeduplicateByEntityKeyAndSkipDeliveredRows(t *testing.T) {
 	t.Parallel()
 
-	telemetry := testTransferTelemetry(t)
-	checkpoints := newFakeStore()
-	checkpoints.operationCheckpoints[store.OperationInvoiceSaleFactor] = 10
-	source := &fakeSource{
+	job, checkpoints, target := newTestJob(t)
+	checkpoints.deliveredKeys[store.OperationInvoiceSalePayment] = map[string]struct{}{
+		"payment:30": {},
+	}
+	job.source = &fakeSource{
 		invoices: map[int][]domain.Invoices{
 			0: {
 				{InvoiceId: 10, ProductID: 100, PaymentTypeID: 7, VisitorCode: "12", WareHouseID: 20, SNoePardakht: 30},
-				{InvoiceId: 20, ProductID: 101, PaymentTypeID: 8, VisitorCode: "13", WareHouseID: 21, SNoePardakht: 31},
+				{InvoiceId: 20, ProductID: 101, PaymentTypeID: 8, VisitorCode: "13", WareHouseID: 21, SNoePardakht: 40},
+				{InvoiceId: 30, ProductID: 102, PaymentTypeID: 9, VisitorCode: "14", WareHouseID: 22, SNoePardakht: 40},
+			},
+			30: nil,
+		},
+	}
+
+	if err := job.Run(observability.WithRunID(context.Background(), "run-dedupe")); err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	batches := target.invoiceOps[string(store.OperationInvoiceSalePayment)]
+	if len(batches) != 1 {
+		t.Fatalf("expected one sale payment batch, got %d", len(batches))
+	}
+	if len(batches[0]) != 1 || batches[0][0].InvoiceId != 30 {
+		t.Fatalf("expected only the last undelivered payment row to be posted, got %#v", batches[0])
+	}
+	if got := checkpoints.operationCheckpoints[store.OperationInvoiceSalePayment]; got != 30 {
+		t.Fatalf("expected sale payment checkpoint 30, got %d", got)
+	}
+}
+
+func TestSyncOperationAdvancesCheckpointWhenAllEntityKeysAlreadyDelivered(t *testing.T) {
+	t.Parallel()
+
+	job, checkpoints, target := newTestJob(t)
+	checkpoints.deliveredKeys[store.OperationProductsGoods] = map[string]struct{}{
+		"product:10": {},
+		"product:20": {},
+	}
+	job.source = &fakeSource{
+		products: map[int][]domain.Products{
+			0: {
+				{ID: 10, Code: "P-10"},
+				{ID: 20, Code: "P-20"},
 			},
 			20: nil,
 		},
 	}
-	target := newFakeTarget(true, "")
 
-	job := NewJob(checkpoints, source, target, nil, telemetry)
-	if err := job.Run(observability.WithRunID(context.Background(), "run-2")); err != nil {
+	if err := job.Run(observability.WithRunID(context.Background(), "run-products")); err != nil {
 		t.Fatalf("Run returned error: %v", err)
 	}
 
-	saleFactorBatch := target.invoiceOps[string(store.OperationInvoiceSaleFactor)]
-	if len(saleFactorBatch) != 1 || saleFactorBatch[0][0].InvoiceId != 20 {
-		t.Fatalf("expected trimmed invoice batch, got %#v", saleFactorBatch)
+	if got := len(target.productOps); got != 0 {
+		t.Fatalf("expected skipped product post, got %d product batches", got)
+	}
+	if got := checkpoints.operationCheckpoints[store.OperationProductsGoods]; got != 20 {
+		t.Fatalf("expected products checkpoint 20, got %d", got)
+	}
+	if got := checkpoints.sourceProgress[store.EntityProduct]; got != 20 {
+		t.Fatalf("expected products source progress 20, got %d", got)
 	}
 }
 
 func TestJobDoesNotAdvanceSourceProgressWhenOperationFails(t *testing.T) {
 	t.Parallel()
 
-	telemetry := testTransferTelemetry(t)
-	checkpoints := newFakeStore()
-	source := &fakeSource{
+	job, checkpoints, _ := newTestJob(t)
+	job.source = &fakeSource{
 		invoices: map[int][]domain.Invoices{
 			0: {
 				{InvoiceId: 10, ProductID: 100, PaymentTypeID: 7, VisitorCode: "12", WareHouseID: 20, SNoePardakht: 30},
@@ -113,10 +172,9 @@ func TestJobDoesNotAdvanceSourceProgressWhenOperationFails(t *testing.T) {
 			},
 		},
 	}
-	target := newFakeTarget(true, string(store.OperationInvoiceSaleOrder))
+	job.target.(*fakeTarget).failOp = string(store.OperationInvoiceSaleOrder)
 
-	job := NewJob(checkpoints, source, target, nil, telemetry)
-	err := job.Run(observability.WithRunID(context.Background(), "run-3"))
+	err := job.Run(observability.WithRunID(context.Background(), "run-failure"))
 	if err == nil {
 		t.Fatal("expected run failure")
 	}
@@ -124,15 +182,25 @@ func TestJobDoesNotAdvanceSourceProgressWhenOperationFails(t *testing.T) {
 	if got := checkpoints.sourceProgress[store.EntityInvoice]; got != 0 {
 		t.Fatalf("expected invoice source progress to stay at 0, got %d", got)
 	}
-
 	if got := checkpoints.operationCheckpoints[store.OperationInvoiceSaleFactor]; got != 20 {
 		t.Fatalf("expected completed sale factor checkpoint 20, got %d", got)
 	}
 }
 
+func newTestJob(t *testing.T) (*Job, *fakeStore, *fakeTarget) {
+	t.Helper()
+
+	telemetry := testTransferTelemetry(t)
+	checkpoints := newFakeStore()
+	target := newFakeTarget(true, "")
+	job := NewJob(checkpoints, &fakeSource{}, target, nil, telemetry)
+	return job, checkpoints, target
+}
+
 type fakeStore struct {
 	sourceProgress       map[store.Entity]int
 	operationCheckpoints map[store.Operation]int
+	deliveredKeys        map[store.Operation]map[string]struct{}
 	deliveryAttempts     []store.DeliveryAttempt
 }
 
@@ -140,6 +208,7 @@ func newFakeStore() *fakeStore {
 	return &fakeStore{
 		sourceProgress:       make(map[store.Entity]int),
 		operationCheckpoints: make(map[store.Operation]int),
+		deliveredKeys:        make(map[store.Operation]map[string]struct{}),
 	}
 }
 
@@ -158,14 +227,30 @@ func (f *fakeStore) GetOperationCheckpoint(_ context.Context, operation store.Op
 	return f.operationCheckpoints[operation], nil
 }
 
+func (f *fakeStore) GetDeliveredEntityKeys(_ context.Context, operation store.Operation, entityKeys []string) (map[string]struct{}, error) {
+	delivered := make(map[string]struct{}, len(entityKeys))
+	for _, entityKey := range entityKeys {
+		if _, exists := f.deliveredKeys[operation][entityKey]; exists {
+			delivered[entityKey] = struct{}{}
+		}
+	}
+	return delivered, nil
+}
+
 func (f *fakeStore) RecordDeliveryAttempt(_ context.Context, attempt store.DeliveryAttempt) error {
 	f.deliveryAttempts = append(f.deliveryAttempts, attempt)
 	return nil
 }
 
-func (f *fakeStore) MarkBatchDelivered(_ context.Context, operation store.Operation, lastSourceID int, _ []store.DeliveredRecord) error {
+func (f *fakeStore) MarkBatchDelivered(_ context.Context, operation store.Operation, lastSourceID int, records []store.DeliveredRecord) error {
 	if lastSourceID > f.operationCheckpoints[operation] {
 		f.operationCheckpoints[operation] = lastSourceID
+	}
+	if f.deliveredKeys[operation] == nil {
+		f.deliveredKeys[operation] = make(map[string]struct{}, len(records))
+	}
+	for _, record := range records {
+		f.deliveredKeys[operation][record.EntityKey] = struct{}{}
 	}
 	return nil
 }
@@ -196,7 +281,11 @@ func (f *fakeSource) FetchBaseData(_ context.Context, _, _ int, lastID int) (dom
 type fakeTarget struct {
 	emitAttempts bool
 	failOp       string
+	calls        []string
 	invoiceOps   map[string][][]domain.Invoices
+	customerOps  [][]domain.Customers
+	productOps   [][]domain.Products
+	baseDataOps  []domain.BaseData
 }
 
 func newFakeTarget(emitAttempts bool, failOp string) *fakeTarget {
@@ -211,9 +300,23 @@ func (f *fakeTarget) PostInvoiceToSaleFactor(ctx context.Context, invoices []dom
 	return f.recordInvoiceOp(ctx, string(store.OperationInvoiceSaleFactor), invoices)
 }
 
-func (f *fakeTarget) PostProductsToGoods(context.Context, []domain.Products) error { return nil }
+func (f *fakeTarget) PostProductsToGoods(ctx context.Context, products []domain.Products) error {
+	if err := f.emitResult(ctx, string(store.OperationProductsGoods)); err != nil {
+		return err
+	}
 
-func (f *fakeTarget) PostCustomerToSaleCustomer(context.Context, []domain.Customers) error {
+	f.calls = append(f.calls, string(store.OperationProductsGoods))
+	f.productOps = append(f.productOps, append([]domain.Products(nil), products...))
+	return nil
+}
+
+func (f *fakeTarget) PostCustomerToSaleCustomer(ctx context.Context, customers []domain.Customers) error {
+	if err := f.emitResult(ctx, string(store.OperationCustomerSaleCustomer)); err != nil {
+		return err
+	}
+
+	f.calls = append(f.calls, string(store.OperationCustomerSaleCustomer))
+	f.customerOps = append(f.customerOps, append([]domain.Customers(nil), customers...))
 	return nil
 }
 
@@ -241,11 +344,28 @@ func (f *fakeTarget) PostInvoiceToSaleTypeSelect(ctx context.Context, invoices [
 	return f.recordInvoiceOp(ctx, string(store.OperationInvoiceSaleTypeSelect), invoices)
 }
 
-func (f *fakeTarget) PostBaseDataToDeliverCenterSaleSelect(context.Context, domain.BaseData) error {
+func (f *fakeTarget) PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, baseData domain.BaseData) error {
+	if err := f.emitResult(ctx, string(store.OperationBaseDataDeliverCenter)); err != nil {
+		return err
+	}
+
+	f.calls = append(f.calls, string(store.OperationBaseDataDeliverCenter))
+	f.baseDataOps = append(f.baseDataOps, baseData)
 	return nil
 }
 
 func (f *fakeTarget) recordInvoiceOp(ctx context.Context, operation string, invoices []domain.Invoices) error {
+	if err := f.emitResult(ctx, operation); err != nil {
+		return err
+	}
+
+	f.calls = append(f.calls, operation)
+	copied := append([]domain.Invoices(nil), invoices...)
+	f.invoiceOps[operation] = append(f.invoiceOps[operation], copied)
+	return nil
+}
+
+func (f *fakeTarget) emitResult(ctx context.Context, operation string) error {
 	if operation == f.failOp {
 		if f.emitAttempts {
 			if observer := observability.AttemptObserverFromContext(ctx); observer != nil {
@@ -261,8 +381,6 @@ func (f *fakeTarget) recordInvoiceOp(ctx context.Context, operation string, invo
 		}
 	}
 
-	copied := append([]domain.Invoices(nil), invoices...)
-	f.invoiceOps[operation] = append(f.invoiceOps[operation], copied)
 	return nil
 }
 

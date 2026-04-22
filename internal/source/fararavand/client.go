@@ -123,12 +123,12 @@ func (c *Client) get(ctx context.Context, endpointGroup, path string, target int
 	defer span.End()
 
 	observer := func(attempt retry.Attempt) {
-		c.logAttempt(ctx, endpointGroup, attempt)
+		observability.LogHTTPAttempt(c.log, ctx, "fararavand", endpointGroup, attempt)
 		if attempt.WillRetry {
 			c.telemetry.RecordRetry(ctx, "fararavand", endpointGroup)
 		}
 		if attempt.Error != nil && !attempt.WillRetry {
-			c.telemetry.RecordFailure(ctx, "fararavand", endpointGroup, attempt.StatusCode, classifyError(attempt.StatusCode, attempt.Error))
+			c.telemetry.RecordFailure(ctx, "fararavand", endpointGroup, attempt.StatusCode, observability.ClassifyHTTPError(attempt.StatusCode, attempt.Error))
 		}
 	}
 
@@ -170,43 +170,4 @@ func (c *Client) getOnce(ctx context.Context, path string, target interface{}) (
 	}
 
 	return res.StatusCode, nil
-}
-
-func (c *Client) logAttempt(ctx context.Context, endpointGroup string, attempt retry.Attempt) {
-	if c.log == nil {
-		return
-	}
-
-	fields := []interface{}{
-		"run_id", observability.RunIDFromContext(ctx),
-		"system", "fararavand",
-		"endpoint_group", endpointGroup,
-		"attempt", attempt.Attempt,
-		"status_code", attempt.StatusCode,
-		"duration_ms", attempt.Duration.Milliseconds(),
-		"will_retry", attempt.WillRetry,
-	}
-
-	if attempt.Error != nil {
-		fields = append(fields, "error", attempt.Error.Error(), "error_class", classifyError(attempt.StatusCode, attempt.Error))
-		c.log.Warnw("fararavand request attempt failed", fields...)
-		return
-	}
-
-	c.log.Infow("fararavand request succeeded", fields...)
-}
-
-func classifyError(statusCode int, err error) string {
-	switch {
-	case err == nil:
-		return "none"
-	case statusCode == http.StatusTooManyRequests:
-		return "rate_limit"
-	case statusCode >= 500:
-		return "upstream_5xx"
-	case statusCode >= 400:
-		return "upstream_4xx"
-	default:
-		return "transport_or_decode"
-	}
 }

@@ -57,6 +57,23 @@ type App struct {
 }
 
 func Load(configPath string) (Config, error) {
+	return load(configPath, func(cfg Config) error {
+		return cfg.Validate()
+	})
+}
+
+func LoadDatabase(configPath string) (Database, error) {
+	cfg, err := load(configPath, func(cfg Config) error {
+		return cfg.ValidateDatabase()
+	})
+	if err != nil {
+		return Database{}, err
+	}
+
+	return cfg.Database, nil
+}
+
+func load(configPath string, validate func(Config) error) (Config, error) {
 	var cfg Config
 
 	v := viper.New()
@@ -77,14 +94,20 @@ func Load(configPath string) (Config, error) {
 		return cfg, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return cfg, err
+	if validate != nil {
+		if err := validate(cfg); err != nil {
+			return cfg, err
+		}
 	}
 
 	return cfg, nil
 }
 
 func (c Config) Validate() error {
+	if err := c.ValidateDatabase(); err != nil {
+		return err
+	}
+
 	if err := validateHTTPConfig("ARYAN_APP", c.AryanApp.BaseURL, c.AryanApp.APIKey, c.AryanApp.Timeout); err != nil {
 		return err
 	}
@@ -93,6 +116,10 @@ func (c Config) Validate() error {
 		return err
 	}
 
+	return c.validateOTel()
+}
+
+func (c Config) ValidateDatabase() error {
 	if c.Database.Username == "" {
 		return fmt.Errorf("DATABASE.USERNAME is required")
 	}
@@ -118,6 +145,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("DATABASE.MAX_IDLE_CONNECTIONS cannot exceed DATABASE.MAX_OPEN_CONNECTIONS")
 	}
 
+	return nil
+}
+
+func (c Config) validateOTel() error {
 	if c.OTel.Enabled {
 		if c.OTel.Endpoint == "" {
 			return fmt.Errorf("OTEL.ENDPOINT is required when OTEL.ENABLED is true")

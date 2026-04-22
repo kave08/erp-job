@@ -41,13 +41,12 @@ type Telemetry struct {
 }
 
 type HTTPAttempt struct {
-	Endpoint    string
-	Attempt     int
-	StatusCode  int
-	Error       error
-	WillRetry   bool
-	Duration    time.Duration
-	EndpointTag string
+	Endpoint   string
+	Attempt    int
+	StatusCode int
+	Error      error
+	WillRetry  bool
+	Duration   time.Duration
 }
 
 type attemptObserverKey struct{}

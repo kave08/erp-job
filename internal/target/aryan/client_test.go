@@ -127,6 +127,64 @@ func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
 	}
 }
 
+func TestPostInvoiceToSalePaymentUsesSNoePardakht(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	var received []domain.SalePaymentSelect
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSalePayment(context.Background(), []domain.Invoices{{
+		PaymentTypeID:  7,
+		SNoePardakht:   44,
+		TxtNoePardakht: "cash",
+	}}); err != nil {
+		t.Fatalf("PostInvoiceToSalePayment returned error: %v", err)
+	}
+
+	if len(received) != 1 || received[0].PaymentWayID != 44 {
+		t.Fatalf("expected payment way id 44 from SNoePardakht, got %#v", received)
+	}
+}
+
+func TestPostInvoiceToSalerSelectRejectsInvalidVisitorCodeBeforeHTTP(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	requests := 0
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			requests++
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSalerSelect(context.Background(), []domain.Invoices{{VisitorCode: "bad-code"}}); err == nil {
+		t.Fatal("expected invalid visitor code error")
+	}
+
+	if requests != 0 {
+		t.Fatalf("expected no HTTP request on invalid visitor code, got %d", requests)
+	}
+}
+
 func TestPostInvoiceToSaleFactorRetriesTransientFailure(t *testing.T) {
 	t.Parallel()
 

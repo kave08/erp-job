@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"erp-job/internal/store"
@@ -42,8 +43,8 @@ ON DUPLICATE KEY UPDATE
 	upsertDeliveryAttemptQuery = `
 INSERT INTO delivery_state (
 	operation_name,
-	source_id,
-	dedupe_key,
+	source_cursor,
+	entity_key,
 	status,
 	attempt_count,
 	last_http_status,
@@ -54,7 +55,7 @@ INSERT INTO delivery_state (
 )
 VALUES (?, ?, ?, ?, 1, ?, ?, NULL, ?, ?)
 ON DUPLICATE KEY UPDATE
-	dedupe_key = VALUES(dedupe_key),
+	source_cursor = GREATEST(delivery_state.source_cursor, VALUES(source_cursor)),
 	status = VALUES(status),
 	attempt_count = delivery_state.attempt_count + 1,
 	last_http_status = VALUES(last_http_status),
@@ -64,8 +65,8 @@ ON DUPLICATE KEY UPDATE
 	upsertDeliveredRecordQuery = `
 INSERT INTO delivery_state (
 	operation_name,
-	source_id,
-	dedupe_key,
+	source_cursor,
+	entity_key,
 	status,
 	attempt_count,
 	last_http_status,
@@ -76,9 +77,9 @@ INSERT INTO delivery_state (
 )
 VALUES (?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
-	dedupe_key = VALUES(dedupe_key),
+	source_cursor = GREATEST(delivery_state.source_cursor, VALUES(source_cursor)),
 	status = VALUES(status),
-	attempt_count = GREATEST(delivery_state.attempt_count, VALUES(attempt_count)),
+	attempt_count = delivery_state.attempt_count,
 	last_http_status = VALUES(last_http_status),
 	last_error = NULL,
 	delivered_at = VALUES(delivered_at),
@@ -166,7 +167,8 @@ func (c *Checkpoints) RecordDeliveryAttempt(ctx context.Context, attempt store.D
 
 	span.SetAttributes(
 		attribute.String("operation", string(attempt.Operation)),
-		attribute.Int("source_id", attempt.SourceID),
+		attribute.Int("source_cursor", attempt.SourceCursor),
+		attribute.String("entity_key", attempt.EntityKey),
 		attribute.String("status", string(attempt.Status)),
 		attribute.Int("http_status", attempt.HTTPStatus),
 	)
@@ -185,8 +187,8 @@ func (c *Checkpoints) RecordDeliveryAttempt(ctx context.Context, attempt store.D
 		ctx,
 		upsertDeliveryAttemptQuery,
 		string(attempt.Operation),
-		attempt.SourceID,
-		attempt.DedupeKey,
+		attempt.SourceCursor,
+		attempt.EntityKey,
 		string(attempt.Status),
 		lastHTTPStatus,
 		nullableString(attempt.Error),
@@ -194,10 +196,63 @@ func (c *Checkpoints) RecordDeliveryAttempt(ctx context.Context, attempt store.D
 		now,
 	); err != nil {
 		recordSpanError(span, err)
-		return fmt.Errorf("record delivery attempt for %s:%d: %w", attempt.Operation, attempt.SourceID, err)
+		return fmt.Errorf("record delivery attempt for %s:%s: %w", attempt.Operation, attempt.EntityKey, err)
 	}
 
 	return nil
+}
+
+func (c *Checkpoints) GetDeliveredEntityKeys(ctx context.Context, operation store.Operation, entityKeys []string) (map[string]struct{}, error) {
+	ctx, span := tracer.Start(ctx, "store.get_delivered_entity_keys")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", string(operation)),
+		attribute.Int("entity_key_count", len(entityKeys)),
+	)
+
+	delivered := make(map[string]struct{}, len(entityKeys))
+	if len(entityKeys) == 0 {
+		return delivered, nil
+	}
+
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(entityKeys)), ",")
+	query := fmt.Sprintf(`
+SELECT entity_key
+FROM delivery_state
+WHERE operation_name = ?
+  AND status = ?
+  AND entity_key IN (%s);
+`, placeholders)
+
+	args := make([]interface{}, 0, len(entityKeys)+2)
+	args = append(args, string(operation), string(store.DeliveryStatusDelivered))
+	for _, entityKey := range entityKeys {
+		args = append(args, entityKey)
+	}
+
+	rows, err := c.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("get delivered entity keys for %s: %w", operation, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var entityKey string
+		if err := rows.Scan(&entityKey); err != nil {
+			recordSpanError(span, err)
+			return nil, fmt.Errorf("scan delivered entity key for %s: %w", operation, err)
+		}
+		delivered[entityKey] = struct{}{}
+	}
+
+	if err := rows.Err(); err != nil {
+		recordSpanError(span, err)
+		return nil, fmt.Errorf("iterate delivered entity keys for %s: %w", operation, err)
+	}
+
+	return delivered, nil
 }
 
 func (c *Checkpoints) MarkBatchDelivered(ctx context.Context, operation store.Operation, lastSourceID int, records []store.DeliveredRecord) error {
@@ -248,15 +303,15 @@ func (c *Checkpoints) markBatchDelivered(ctx context.Context, tx *sql.Tx, operat
 			ctx,
 			upsertDeliveredRecordQuery,
 			string(operation),
-			record.SourceID,
-			record.DedupeKey,
+			record.SourceCursor,
+			record.EntityKey,
 			string(store.DeliveryStatusDelivered),
 			lastHTTPStatus,
 			deliveredAt,
 			now,
 			now,
 		); err != nil {
-			return fmt.Errorf("upsert delivered state for %s:%d: %w", operation, record.SourceID, err)
+			return fmt.Errorf("upsert delivered state for %s:%s: %w", operation, record.EntityKey, err)
 		}
 	}
 

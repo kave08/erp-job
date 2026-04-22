@@ -27,10 +27,8 @@ const (
 	saleTypeSelectPath          = "SaleTypeSelect"
 	saleCenter4SaleSelectPath   = "SaleCenter4SaleSelect"
 	salePaymentSelectPath       = "SalePaymentSelect"
-	saleCenterSelectPath        = "SaleCenterSelect"
 	deliverCenterSaleSelectPath = "DeliverCenter_SaleSelect"
 	salerSelectPath             = "SalerSelect"
-	saleSellerVisitorPath       = "SaleSellerVisitor"
 	goodsPath                   = "Goods"
 	saleProformaPath            = "SaleProforma"
 	saleFactorPath              = "SaleFactor"
@@ -147,7 +145,7 @@ func (c *Client) PostInvoiceToSalePayment(ctx context.Context, invoices []domain
 	payload := make([]domain.SalePaymentSelect, 0, len(invoices))
 	for _, item := range invoices {
 		payload = append(payload, domain.SalePaymentSelect{
-			PaymentWayID:   item.PaymentTypeID,
+			PaymentWayID:   item.SNoePardakht,
 			PaymentwayDesc: item.TxtNoePardakht,
 		})
 	}
@@ -171,9 +169,9 @@ func (c *Client) PostInvoiceToSaleCenter(ctx context.Context, invoices []domain.
 func (c *Client) PostInvoiceToSalerSelect(ctx context.Context, invoices []domain.Invoices) error {
 	payload := make([]domain.SalerSelect, 0, len(invoices))
 	for _, item := range invoices {
-		visitorID, err := strconv.Atoi(item.VisitorCode)
+		visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
 		if err != nil {
-			return fmt.Errorf("parse visitor code %q: %w", item.VisitorCode, err)
+			return err
 		}
 		payload = append(payload, domain.SalerSelect{
 			SaleVisitorID:   visitorID,
@@ -187,9 +185,9 @@ func (c *Client) PostInvoiceToSalerSelect(ctx context.Context, invoices []domain
 func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domain.Invoices) error {
 	payload := make([]domain.SaleProforma, 0, len(invoices))
 	for _, item := range invoices {
-		visitorCode, err := strconv.Atoi(item.VisitorCode)
+		visitorCode, err := domain.ParseVisitorCode(item.VisitorCode)
 		if err != nil {
-			return fmt.Errorf("parse visitor code %q: %w", item.VisitorCode, err)
+			return err
 		}
 		payload = append(payload, domain.SaleProforma{
 			CustomerId:       item.CustomerID,
@@ -249,22 +247,21 @@ func (c *Client) postJSON(ctx context.Context, endpoint string, payload interfac
 
 	attemptObserver := observability.AttemptObserverFromContext(ctx)
 	observer := func(attempt retry.Attempt) {
-		c.logAttempt(ctx, endpoint, attempt)
+		observability.LogHTTPAttempt(c.log, ctx, "aryan", endpoint, attempt)
 		if attempt.WillRetry {
 			c.telemetry.RecordRetry(ctx, "aryan", endpoint)
 		}
 		if attempt.Error != nil && !attempt.WillRetry {
-			c.telemetry.RecordFailure(ctx, "aryan", endpoint, attempt.StatusCode, classifyError(attempt.StatusCode, attempt.Error))
+			c.telemetry.RecordFailure(ctx, "aryan", endpoint, attempt.StatusCode, observability.ClassifyHTTPError(attempt.StatusCode, attempt.Error))
 		}
 		if attemptObserver != nil {
 			attemptObserver(observability.HTTPAttempt{
-				Endpoint:    endpoint,
-				Attempt:     attempt.Attempt,
-				StatusCode:  attempt.StatusCode,
-				Error:       attempt.Error,
-				WillRetry:   attempt.WillRetry,
-				Duration:    attempt.Duration,
-				EndpointTag: endpoint,
+				Endpoint:   endpoint,
+				Attempt:    attempt.Attempt,
+				StatusCode: attempt.StatusCode,
+				Error:      attempt.Error,
+				WillRetry:  attempt.WillRetry,
+				Duration:   attempt.Duration,
 			})
 		}
 	}
@@ -309,43 +306,4 @@ func (c *Client) postJSONOnce(ctx context.Context, endpoint string, payload inte
 	}
 
 	return res.StatusCode, nil
-}
-
-func (c *Client) logAttempt(ctx context.Context, endpoint string, attempt retry.Attempt) {
-	if c.log == nil {
-		return
-	}
-
-	fields := []interface{}{
-		"run_id", observability.RunIDFromContext(ctx),
-		"system", "aryan",
-		"endpoint_group", endpoint,
-		"attempt", attempt.Attempt,
-		"status_code", attempt.StatusCode,
-		"duration_ms", attempt.Duration.Milliseconds(),
-		"will_retry", attempt.WillRetry,
-	}
-
-	if attempt.Error != nil {
-		fields = append(fields, "error", attempt.Error.Error(), "error_class", classifyError(attempt.StatusCode, attempt.Error))
-		c.log.Warnw("aryan request attempt failed", fields...)
-		return
-	}
-
-	c.log.Infow("aryan request succeeded", fields...)
-}
-
-func classifyError(statusCode int, err error) string {
-	switch {
-	case err == nil:
-		return "none"
-	case statusCode == http.StatusTooManyRequests:
-		return "rate_limit"
-	case statusCode >= 500:
-		return "upstream_5xx"
-	case statusCode >= 400:
-		return "upstream_4xx"
-	default:
-		return "transport_or_encode"
-	}
 }
