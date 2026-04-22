@@ -1,13 +1,17 @@
 package aryan
 
 import (
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"erp-job/internal/config"
 	"erp-job/internal/domain"
+	"erp-job/internal/observability"
+	"erp-job/internal/retry"
 )
 
 func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
@@ -19,25 +23,22 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}
 
 	var received []domain.SaleFactor
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/SaleFactor" {
-			t.Fatalf("unexpected path: %s", r.URL.Path)
-		}
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if r.URL.Path != "/SaleFactor" {
+				t.Fatalf("unexpected path: %s", r.URL.Path)
+			}
+			if got := r.Header.Get("ApiKey"); got != cfg.APIKey {
+				t.Fatalf("unexpected api key header: %s", got)
+			}
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
 
-		if got := r.Header.Get("ApiKey"); got != cfg.APIKey {
-			t.Fatalf("unexpected api key header: %s", got)
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
-			t.Fatalf("decode request body: %v", err)
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	cfg.BaseURL = server.URL + "/"
-	client := NewClient(cfg)
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
 
 	invoice := domain.Invoices{
 		CustomerID:      11,
@@ -54,7 +55,7 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 		TozihatFaktor:   "invoice detail",
 	}
 
-	if err := client.PostInvoiceToSaleFactor(t.Context(), []domain.Invoices{invoice}); err != nil {
+	if err := client.PostInvoiceToSaleFactor(context.Background(), []domain.Invoices{invoice}); err != nil {
 		t.Fatalf("PostInvoiceToSaleFactor returned error: %v", err)
 	}
 
@@ -95,6 +96,129 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}
 	if got.DetailDesc != invoice.TozihatFaktor {
 		t.Fatalf("unexpected detail description: %s", got.DetailDesc)
+	}
+}
+
+func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	var received []domain.SaleOrder
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSaleOrder(context.Background(), []domain.Invoices{{InvoiceId: 91, CustomerID: 1}}); err != nil {
+		t.Fatalf("PostInvoiceToSaleOrder returned error: %v", err)
+	}
+
+	if len(received) != 1 || received[0].SecondNumber != 91 {
+		t.Fatalf("expected sale order second number 91, got %#v", received)
+	}
+}
+
+func TestPostInvoiceToSaleFactorRetriesTransientFailure(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	attempts := 0
+	client := newClient(cfg, testTelemetry(t), nil, retry.Policy{
+		MaxAttempts:    3,
+		InitialBackoff: 0,
+		MaxBackoff:     0,
+		Multiplier:     1,
+		Jitter:         0,
+	})
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			attempts++
+			if attempts == 1 {
+				return newResponse(http.StatusServiceUnavailable, "temporary failure\n"), nil
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSaleFactor(context.Background(), []domain.Invoices{{InvoiceId: 10}}); err != nil {
+		t.Fatalf("PostInvoiceToSaleFactor returned error: %v", err)
+	}
+
+	if attempts != 2 {
+		t.Fatalf("expected 2 attempts, got %d", attempts)
+	}
+}
+
+func TestPostInvoiceToSaleFactorDoesNotRetryPermanentFailure(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	attempts := 0
+	client := newClient(cfg, testTelemetry(t), nil, retry.Policy{
+		MaxAttempts:    3,
+		InitialBackoff: 0,
+		MaxBackoff:     0,
+		Multiplier:     1,
+		Jitter:         0,
+	})
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			attempts++
+			return newResponse(http.StatusBadRequest, "bad request\n"), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSaleFactor(context.Background(), []domain.Invoices{{InvoiceId: 10}}); err == nil {
+		t.Fatal("expected permanent failure")
+	}
+
+	if attempts != 1 {
+		t.Fatalf("expected 1 attempt for permanent failure, got %d", attempts)
+	}
+}
+
+func testTelemetry(t *testing.T) *observability.Telemetry {
+	t.Helper()
+
+	telemetry, shutdown, err := observability.New(context.Background(), config.OTel{})
+	if err != nil {
+		t.Fatalf("create telemetry: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = shutdown(context.Background())
+	})
+
+	return telemetry
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func newResponse(statusCode int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: statusCode,
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 }
 

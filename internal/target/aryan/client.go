@@ -12,6 +12,13 @@ import (
 
 	"erp-job/internal/config"
 	"erp-job/internal/domain"
+	"erp-job/internal/observability"
+	"erp-job/internal/retry"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 const (
@@ -30,18 +37,28 @@ const (
 )
 
 type Client struct {
-	baseURL    string
-	apiKey     string
-	httpClient *http.Client
+	baseURL     string
+	apiKey      string
+	httpClient  *http.Client
+	retryPolicy retry.Policy
+	telemetry   *observability.Telemetry
+	log         *zap.SugaredLogger
 }
 
-func NewClient(cfg config.AryanApp) *Client {
+func NewClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap.SugaredLogger) *Client {
+	return newClient(cfg, telemetry, log, retry.DefaultPolicy())
+}
+
+func newClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap.SugaredLogger, policy retry.Policy) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(cfg.BaseURL, "/") + "/",
 		apiKey:  cfg.APIKey,
 		httpClient: &http.Client{
 			Timeout: cfg.Timeout,
 		},
+		retryPolicy: policy,
+		telemetry:   telemetry,
+		log:         log,
 	}
 }
 
@@ -108,7 +125,7 @@ func (c *Client) PostInvoiceToSaleOrder(ctx context.Context, invoices []domain.I
 		payload = append(payload, domain.SaleOrder{
 			CustomerId:       item.CustomerID,
 			VoucherDate:      item.InvoiceDate,
-			SecondNumber:     0,
+			SecondNumber:     item.InvoiceId,
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
 			SaleTypeId:       10000001,
@@ -116,7 +133,7 @@ func (c *Client) PostInvoiceToSaleOrder(ctx context.Context, invoices []domain.I
 			SaleCenterID:     item.CodeMahal,
 			PaymentWayID:     item.SNoePardakht,
 			SellerVisitorID:  item.CCForoshandeh,
-			ServiceGoodsID:   0,
+			ServiceGoodsID:   item.ProductID,
 			Quantity:         float64(item.ProductCount),
 			Fee:              float64(item.ProductFee),
 			DetailDesc:       item.TozihatFaktor,
@@ -177,7 +194,7 @@ func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domai
 		payload = append(payload, domain.SaleProforma{
 			CustomerId:       item.CustomerID,
 			VoucherDate:      item.Date,
-			SecondNumber:     "",
+			SecondNumber:     strconv.Itoa(item.InvoiceId),
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
 			SaleTypeId:       item.SNoePardakht,
@@ -221,14 +238,60 @@ func (c *Client) PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, base
 }
 
 func (c *Client) postJSON(ctx context.Context, endpoint string, payload interface{}) error {
+	ctx, span := c.telemetry.Tracer("erp-job/target/aryan").Start(ctx, "aryan.post",
+		trace.WithAttributes(
+			attribute.String("component", "aryan"),
+			attribute.String("endpoint_group", endpoint),
+			attribute.String("http.method", http.MethodPost),
+		),
+	)
+	defer span.End()
+
+	attemptObserver := observability.AttemptObserverFromContext(ctx)
+	observer := func(attempt retry.Attempt) {
+		c.logAttempt(ctx, endpoint, attempt)
+		if attempt.WillRetry {
+			c.telemetry.RecordRetry(ctx, "aryan", endpoint)
+		}
+		if attempt.Error != nil && !attempt.WillRetry {
+			c.telemetry.RecordFailure(ctx, "aryan", endpoint, attempt.StatusCode, classifyError(attempt.StatusCode, attempt.Error))
+		}
+		if attemptObserver != nil {
+			attemptObserver(observability.HTTPAttempt{
+				Endpoint:    endpoint,
+				Attempt:     attempt.Attempt,
+				StatusCode:  attempt.StatusCode,
+				Error:       attempt.Error,
+				WillRetry:   attempt.WillRetry,
+				Duration:    attempt.Duration,
+				EndpointTag: endpoint,
+			})
+		}
+	}
+
+	result, err := retry.Do(ctx, c.retryPolicy, observer, func(ctx context.Context) (int, error) {
+		return c.postJSONOnce(ctx, endpoint, payload)
+	})
+	if err != nil {
+		span.SetAttributes(attribute.Int("http.status_code", result.StatusCode))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	span.SetAttributes(attribute.Int("http.status_code", result.StatusCode))
+	return nil
+}
+
+func (c *Client) postJSONOnce(ctx context.Context, endpoint string, payload interface{}) (int, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+endpoint, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	req.Header.Set("ApiKey", c.apiKey)
@@ -236,14 +299,53 @@ func (c *Client) postJSON(ctx context.Context, endpoint string, payload interfac
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		resBody, _ := io.ReadAll(res.Body)
-		return fmt.Errorf("aryan request failed. status: %d, response: %s", res.StatusCode, strings.TrimSpace(string(resBody)))
+		return res.StatusCode, fmt.Errorf("aryan request failed. status: %d, response: %s", res.StatusCode, strings.TrimSpace(string(resBody)))
 	}
 
-	return nil
+	return res.StatusCode, nil
+}
+
+func (c *Client) logAttempt(ctx context.Context, endpoint string, attempt retry.Attempt) {
+	if c.log == nil {
+		return
+	}
+
+	fields := []interface{}{
+		"run_id", observability.RunIDFromContext(ctx),
+		"system", "aryan",
+		"endpoint_group", endpoint,
+		"attempt", attempt.Attempt,
+		"status_code", attempt.StatusCode,
+		"duration_ms", attempt.Duration.Milliseconds(),
+		"will_retry", attempt.WillRetry,
+	}
+
+	if attempt.Error != nil {
+		fields = append(fields, "error", attempt.Error.Error(), "error_class", classifyError(attempt.StatusCode, attempt.Error))
+		c.log.Warnw("aryan request attempt failed", fields...)
+		return
+	}
+
+	c.log.Infow("aryan request succeeded", fields...)
+}
+
+func classifyError(statusCode int, err error) string {
+	switch {
+	case err == nil:
+		return "none"
+	case statusCode == http.StatusTooManyRequests:
+		return "rate_limit"
+	case statusCode >= 500:
+		return "upstream_5xx"
+	case statusCode >= 400:
+		return "upstream_4xx"
+	default:
+		return "transport_or_encode"
+	}
 }

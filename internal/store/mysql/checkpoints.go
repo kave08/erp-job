@@ -1,45 +1,92 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	"erp-job/internal/store"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
-	insertInvoiceProgressQuery  = "INSERT INTO invoice_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
-	getInvoiceProgressQuery     = "SELECT last_id, page_number FROM invoice_progress_info ORDER BY id DESC LIMIT 1;"
-	insertCustomerProgressQuery = "INSERT INTO customer_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
-	getCustomerProgressQuery    = "SELECT last_id, page_number FROM customer_progress_info ORDER BY id DESC LIMIT 1;"
-	insertProductProgressQuery  = "INSERT INTO product_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
-	getProductProgressQuery     = "SELECT last_id, page_number FROM product_progress_info ORDER BY id DESC LIMIT 1;"
-	insertBaseDataProgressQuery = "INSERT INTO base_data_progress_info (last_id, page_number, created_at) VALUES(?, ?, ?);"
-	getBaseDataProgressQuery    = "SELECT last_id, page_number FROM base_data_progress_info ORDER BY id DESC LIMIT 1;"
-
-	insertProductsToGoodsQuery         = "INSERT INTO products_to_goods (p_id, created_at) VALUES(?, ?);"
-	getProductsToGoodsQuery            = "SELECT Max(p_id) FROM products_to_goods;"
-	insertCustomerToSaleCustomerQuery  = "INSERT INTO customer_to_sale_customer (c_id, created_at) VALUES(?, ?);"
-	getCustomerToSaleCustomerQuery     = "SELECT Max(c_id) FROM customer_to_sale_customer;"
-	insertInvoiceToSaleFactorQuery     = "INSERT INTO invoice_to_sale_factor (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSaleFactorQuery        = "SELECT Max(i_id) FROM invoice_to_sale_factor;"
-	insertInvoiceToSaleOrderQuery      = "INSERT INTO invoice_to_sale_order (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSaleOrderQuery         = "SELECT Max(i_id) FROM invoice_to_sale_order;"
-	insertInvoiceToSalePaymentQuery    = "INSERT INTO invoice_to_sale_payment (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSalePaymentQuery       = "SELECT Max(i_id) FROM invoice_to_sale_payment;"
-	insertInvoiceToSalerSelectQuery    = "INSERT INTO invoice_to_saler_select (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSalerSelectQuery       = "SELECT Max(i_id) FROM invoice_to_saler_select;"
-	insertInvoiceToSaleProformaQuery   = "INSERT INTO invoice_to_sale_proforma (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSaleProformaQuery      = "SELECT Max(i_id) FROM invoice_to_sale_proforma;"
-	insertInvoiceToSaleCenterQuery     = "INSERT INTO invoice_to_sale_center (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSaleCenterQuery        = "SELECT Max(i_id) FROM invoice_to_sale_center;"
-	insertInvoiceToSaleTypeSelectQuery = "INSERT INTO invoice_to_sale_type_select (i_id, created_at) VALUES(?, ?);"
-	getInvoiceToSaleTypeSelectQuery    = "SELECT Max(i_id) FROM invoice_to_sale_type_select;"
-	insertBaseDataToDeliverCenterQuery = "INSERT INTO base_data_to_deliver_center (i_id, created_at) VALUES(?, ?);"
-	getBaseDataToDeliverCenterQuery    = "SELECT Max(i_id) FROM base_data_to_deliver_center;"
+	getSourceProgressQuery = `
+SELECT last_source_id
+FROM source_progress
+WHERE entity = ?;
+`
+	upsertSourceProgressQuery = `
+INSERT INTO source_progress (entity, last_source_id, created_at, updated_at)
+VALUES (?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE
+	last_source_id = GREATEST(last_source_id, VALUES(last_source_id)),
+	updated_at = VALUES(updated_at);
+`
+	getOperationCheckpointQuery = `
+SELECT last_source_id
+FROM operation_checkpoint
+WHERE operation_name = ?;
+`
+	upsertOperationCheckpointQuery = `
+INSERT INTO operation_checkpoint (operation_name, last_source_id, created_at, updated_at)
+VALUES (?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE
+	last_source_id = GREATEST(last_source_id, VALUES(last_source_id)),
+	updated_at = VALUES(updated_at);
+`
+	upsertDeliveryAttemptQuery = `
+INSERT INTO delivery_state (
+	operation_name,
+	source_id,
+	dedupe_key,
+	status,
+	attempt_count,
+	last_http_status,
+	last_error,
+	delivered_at,
+	created_at,
+	updated_at
 )
+VALUES (?, ?, ?, ?, 1, ?, ?, NULL, ?, ?)
+ON DUPLICATE KEY UPDATE
+	dedupe_key = VALUES(dedupe_key),
+	status = VALUES(status),
+	attempt_count = delivery_state.attempt_count + 1,
+	last_http_status = VALUES(last_http_status),
+	last_error = VALUES(last_error),
+	updated_at = VALUES(updated_at);
+`
+	upsertDeliveredRecordQuery = `
+INSERT INTO delivery_state (
+	operation_name,
+	source_id,
+	dedupe_key,
+	status,
+	attempt_count,
+	last_http_status,
+	last_error,
+	delivered_at,
+	created_at,
+	updated_at
+)
+VALUES (?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)
+ON DUPLICATE KEY UPDATE
+	dedupe_key = VALUES(dedupe_key),
+	status = VALUES(status),
+	attempt_count = GREATEST(delivery_state.attempt_count, VALUES(attempt_count)),
+	last_http_status = VALUES(last_http_status),
+	last_error = NULL,
+	delivered_at = VALUES(delivered_at),
+	updated_at = VALUES(updated_at);
+`
+)
+
+var tracer = otel.Tracer("erp-job/store/mysql")
 
 type Checkpoints struct {
 	db *sql.DB
@@ -49,168 +96,186 @@ func New(db *sql.DB) *Checkpoints {
 	return &Checkpoints{db: db}
 }
 
-func scanProgress(row *sql.Row, context string) (store.Progress, error) {
-	var progress store.Progress
+func (c *Checkpoints) GetSourceProgress(ctx context.Context, entity store.Entity) (int, error) {
+	ctx, span := tracer.Start(ctx, "store.get_source_progress")
+	defer span.End()
 
-	err := row.Scan(&progress.LastID, &progress.PageNumber)
+	span.SetAttributes(attribute.String("entity", string(entity)))
+
+	var lastSourceID sql.NullInt64
+	err := c.db.QueryRowContext(ctx, getSourceProgressQuery, string(entity)).Scan(&lastSourceID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return progress, nil
-		}
-
-		switch err {
-		case sql.ErrConnDone, sql.ErrTxDone:
-			log.Printf("database connection or transaction error: %v", err)
-		}
-
-		return progress, fmt.Errorf("%s: %w", context, err)
-	}
-
-	return progress, nil
-}
-
-func scanNullableMaxInt(row *sql.Row, context string) (int, error) {
-	var maxID sql.NullInt64
-
-	if err := row.Scan(&maxID); err != nil {
-		switch err {
-		case sql.ErrNoRows:
 			return 0, nil
-		case sql.ErrConnDone, sql.ErrTxDone:
-			log.Printf("database connection or transaction error: %v", err)
 		}
-
-		return 0, fmt.Errorf("%s: %w", context, err)
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("get source progress for %s: %w", entity, err)
 	}
 
-	if !maxID.Valid {
+	if !lastSourceID.Valid {
 		return 0, nil
 	}
 
-	return int(maxID.Int64), nil
+	return int(lastSourceID.Int64), nil
 }
 
-func insertTimestampedID(db *sql.DB, query string, id int) error {
-	_, err := db.Exec(query, id, time.Now())
-	if err != nil {
-		return err
+func (c *Checkpoints) AdvanceSourceProgress(ctx context.Context, entity store.Entity, lastSourceID int) error {
+	ctx, span := tracer.Start(ctx, "store.advance_source_progress")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("entity", string(entity)),
+		attribute.Int("last_source_id", lastSourceID),
+	)
+
+	now := time.Now().UTC()
+	if _, err := c.db.ExecContext(ctx, upsertSourceProgressQuery, string(entity), lastSourceID, now, now); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("advance source progress for %s: %w", entity, err)
 	}
 
 	return nil
 }
 
-func (c *Checkpoints) GetInvoiceProgress() (store.Progress, error) {
-	return scanProgress(c.db.QueryRow(getInvoiceProgressQuery), "get invoice progress")
+func (c *Checkpoints) GetOperationCheckpoint(ctx context.Context, operation store.Operation) (int, error) {
+	ctx, span := tracer.Start(ctx, "store.get_operation_checkpoint")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("operation", string(operation)))
+
+	var lastSourceID sql.NullInt64
+	err := c.db.QueryRowContext(ctx, getOperationCheckpointQuery, string(operation)).Scan(&lastSourceID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil
+		}
+		recordSpanError(span, err)
+		return 0, fmt.Errorf("get operation checkpoint for %s: %w", operation, err)
+	}
+
+	if !lastSourceID.Valid {
+		return 0, nil
+	}
+
+	return int(lastSourceID.Int64), nil
 }
 
-func (c *Checkpoints) SaveInvoiceProgress(progress store.Progress) error {
-	_, err := c.db.Exec(insertInvoiceProgressQuery, progress.LastID, progress.PageNumber, time.Now())
-	return err
+func (c *Checkpoints) RecordDeliveryAttempt(ctx context.Context, attempt store.DeliveryAttempt) error {
+	ctx, span := tracer.Start(ctx, "store.record_delivery_attempt")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", string(attempt.Operation)),
+		attribute.Int("source_id", attempt.SourceID),
+		attribute.String("status", string(attempt.Status)),
+		attribute.Int("http_status", attempt.HTTPStatus),
+	)
+
+	now := attempt.AttemptedAt.UTC()
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
+
+	var lastHTTPStatus interface{}
+	if attempt.HTTPStatus > 0 {
+		lastHTTPStatus = attempt.HTTPStatus
+	}
+
+	if _, err := c.db.ExecContext(
+		ctx,
+		upsertDeliveryAttemptQuery,
+		string(attempt.Operation),
+		attempt.SourceID,
+		attempt.DedupeKey,
+		string(attempt.Status),
+		lastHTTPStatus,
+		nullableString(attempt.Error),
+		now,
+		now,
+	); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("record delivery attempt for %s:%d: %w", attempt.Operation, attempt.SourceID, err)
+	}
+
+	return nil
 }
 
-func (c *Checkpoints) GetCustomerProgress() (store.Progress, error) {
-	return scanProgress(c.db.QueryRow(getCustomerProgressQuery), "get customer progress")
+func (c *Checkpoints) MarkBatchDelivered(ctx context.Context, operation store.Operation, lastSourceID int, records []store.DeliveredRecord) error {
+	ctx, span := tracer.Start(ctx, "store.mark_batch_delivered")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("operation", string(operation)),
+		attribute.Int("last_source_id", lastSourceID),
+		attribute.Int("record_count", len(records)),
+	)
+
+	tx, err := c.db.BeginTx(ctx, nil)
+	if err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("begin delivery transaction for %s: %w", operation, err)
+	}
+
+	if err := c.markBatchDelivered(ctx, tx, operation, lastSourceID, records); err != nil {
+		_ = tx.Rollback()
+		recordSpanError(span, err)
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		recordSpanError(span, err)
+		return fmt.Errorf("commit delivery transaction for %s: %w", operation, err)
+	}
+
+	return nil
 }
 
-func (c *Checkpoints) SaveCustomerProgress(progress store.Progress) error {
-	_, err := c.db.Exec(insertCustomerProgressQuery, progress.LastID, progress.PageNumber, time.Now())
-	return err
+func (c *Checkpoints) markBatchDelivered(ctx context.Context, tx *sql.Tx, operation store.Operation, lastSourceID int, records []store.DeliveredRecord) error {
+	now := time.Now().UTC()
+
+	for _, record := range records {
+		deliveredAt := record.DeliveredAt.UTC()
+		if deliveredAt.IsZero() {
+			deliveredAt = now
+		}
+
+		var lastHTTPStatus interface{}
+		if record.HTTPStatus > 0 {
+			lastHTTPStatus = record.HTTPStatus
+		}
+
+		if _, err := tx.ExecContext(
+			ctx,
+			upsertDeliveredRecordQuery,
+			string(operation),
+			record.SourceID,
+			record.DedupeKey,
+			string(store.DeliveryStatusDelivered),
+			lastHTTPStatus,
+			deliveredAt,
+			now,
+			now,
+		); err != nil {
+			return fmt.Errorf("upsert delivered state for %s:%d: %w", operation, record.SourceID, err)
+		}
+	}
+
+	if _, err := tx.ExecContext(ctx, upsertOperationCheckpointQuery, string(operation), lastSourceID, now, now); err != nil {
+		return fmt.Errorf("advance operation checkpoint for %s: %w", operation, err)
+	}
+
+	return nil
 }
 
-func (c *Checkpoints) GetProductProgress() (store.Progress, error) {
-	return scanProgress(c.db.QueryRow(getProductProgressQuery), "get product progress")
+func nullableString(value string) interface{} {
+	if value == "" {
+		return nil
+	}
+
+	return value
 }
 
-func (c *Checkpoints) SaveProductProgress(progress store.Progress) error {
-	_, err := c.db.Exec(insertProductProgressQuery, progress.LastID, progress.PageNumber, time.Now())
-	return err
-}
-
-func (c *Checkpoints) GetBaseDataProgress() (store.Progress, error) {
-	return scanProgress(c.db.QueryRow(getBaseDataProgressQuery), "get base-data progress")
-}
-
-func (c *Checkpoints) SaveBaseDataProgress(progress store.Progress) error {
-	_, err := c.db.Exec(insertBaseDataProgressQuery, progress.LastID, progress.PageNumber, time.Now())
-	return err
-}
-
-func (c *Checkpoints) GetProductsToGoods() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getProductsToGoodsQuery), "get products-to-goods checkpoint")
-}
-
-func (c *Checkpoints) SaveProductsToGoods(id int) error {
-	return insertTimestampedID(c.db, insertProductsToGoodsQuery, id)
-}
-
-func (c *Checkpoints) GetCustomerToSaleCustomer() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getCustomerToSaleCustomerQuery), "get customer-to-sale-customer checkpoint")
-}
-
-func (c *Checkpoints) SaveCustomerToSaleCustomer(id int) error {
-	return insertTimestampedID(c.db, insertCustomerToSaleCustomerQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSaleFactor() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSaleFactorQuery), "get invoice-to-sale-factor checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSaleFactor(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSaleFactorQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSaleOrder() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSaleOrderQuery), "get invoice-to-sale-order checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSaleOrder(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSaleOrderQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSalePayment() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSalePaymentQuery), "get invoice-to-sale-payment checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSalePayment(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSalePaymentQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSalerSelect() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSalerSelectQuery), "get invoice-to-saler-select checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSalerSelect(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSalerSelectQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSaleProforma() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSaleProformaQuery), "get invoice-to-sale-proforma checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSaleProforma(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSaleProformaQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSaleCenter() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSaleCenterQuery), "get invoice-to-sale-center checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSaleCenter(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSaleCenterQuery, id)
-}
-
-func (c *Checkpoints) GetInvoiceToSaleTypeSelect() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getInvoiceToSaleTypeSelectQuery), "get invoice-to-sale-type-select checkpoint")
-}
-
-func (c *Checkpoints) SaveInvoiceToSaleTypeSelect(id int) error {
-	return insertTimestampedID(c.db, insertInvoiceToSaleTypeSelectQuery, id)
-}
-
-func (c *Checkpoints) GetBaseDataToDeliverCenter() (int, error) {
-	return scanNullableMaxInt(c.db.QueryRow(getBaseDataToDeliverCenterQuery), "get base-data-to-deliver-center checkpoint")
-}
-
-func (c *Checkpoints) SaveBaseDataToDeliverCenter(id int) error {
-	return insertTimestampedID(c.db, insertBaseDataToDeliverCenterQuery, id)
+func recordSpanError(span trace.Span, err error) {
+	span.RecordError(err)
+	span.SetStatus(codes.Error, err.Error())
 }

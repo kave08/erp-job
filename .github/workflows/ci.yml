@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: erp_job
+          MYSQL_USER: erp_user
+          MYSQL_PASSWORD: erp_pass
+          MYSQL_ROOT_PASSWORD: root_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_pass --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Create CI config
+        run: |
+          cat > ci.env.yml <<'EOF'
+          ARYAN_APP:
+            BASE_URL: "https://aryan.example.com/"
+            API_KEY: "replace-me"
+            UserName: "replace-me"
+            Pass: "replace-me"
+            TIMEOUT: 30s
+
+          FARARAVAND_APP:
+            BASE_URL: "https://fararavand.example.com/"
+            API_KEY: "replace-me"
+            USER_NAME: "replace-me"
+            PASSWORD: "replace-me"
+            TIMEOUT: 30s
+
+          DATABASE:
+            USERNAME: "erp_user"
+            PASSWORD: "erp_pass"
+            PORT: "3306"
+            HOST: "127.0.0.1"
+            DB_NAME: "erp_job"
+            MAX_OPEN_CONNECTIONS: 10
+            MAX_IDLE_CONNECTIONS: 5
+
+          APP:
+            LOG_PATH: "/tmp/erp-job-logs"
+
+          OTEL:
+            ENABLED: false
+            ENDPOINT: "http://otel-collector:4318"
+            INSECURE: true
+            SERVICE_NAME: "erp-job"
+            ENVIRONMENT: "ci"
+          EOF
+
+      - name: Apply migrations
+        run: go run . migrate --config-path ci.env.yml
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Race Test
+        run: go test -race ./...

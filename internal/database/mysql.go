@@ -13,7 +13,7 @@ import (
 
 func OpenMySQL(cfg config.Database) (*sql.DB, error) {
 	db, err := sql.Open("mysql",
-		fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&collation=utf8_unicode_ci&loc=%s&parseTime=true",
+		fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&collation=utf8mb4_unicode_ci&loc=%s&parseTime=true&multiStatements=true",
 			cfg.Username,
 			cfg.Password,
 			cfg.Host,
