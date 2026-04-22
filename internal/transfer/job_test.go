@@ -9,6 +9,9 @@ import (
 	"erp-job/internal/domain"
 	"erp-job/internal/observability"
 	"erp-job/internal/store"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestTrimAfterCheckpointReturnsFirstRecordAfterCheckpoint(t *testing.T) {
@@ -184,6 +187,34 @@ func TestJobDoesNotAdvanceSourceProgressWhenOperationFails(t *testing.T) {
 	}
 	if got := checkpoints.operationCheckpoints[store.OperationInvoiceSaleFactor]; got != 20 {
 		t.Fatalf("expected completed sale factor checkpoint 20, got %d", got)
+	}
+}
+
+func TestSyncInvoicesWarnsOnConflictingSaleTypeDescriptions(t *testing.T) {
+	t.Parallel()
+
+	core, logs := observer.New(zap.WarnLevel)
+	logger := zap.New(core).Sugar()
+	t.Cleanup(func() {
+		_ = logger.Sync()
+	})
+
+	telemetry := testTransferTelemetry(t)
+	checkpoints := newFakeStore()
+	target := newFakeTarget(true, "")
+	job := NewJob(checkpoints, &fakeSource{}, target, logger, telemetry)
+
+	err := job.syncInvoices(observability.WithRunID(context.Background(), "run-sale-type-warn"), []domain.Invoices{
+		{InvoiceId: 10, ProductID: 100, VisitorCode: "12", WareHouseID: 20, SNoePardakht: 30, TxtNoePardakht: "cash"},
+		{InvoiceId: 20, ProductID: 101, VisitorCode: "13", WareHouseID: 21, SNoePardakht: 30, TxtNoePardakht: "credit"},
+	})
+	if err != nil {
+		t.Fatalf("syncInvoices returned error: %v", err)
+	}
+
+	entries := logs.FilterMessage("conflicting sale type descriptions in invoice batch").All()
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 conflict warning, got %d", len(entries))
 	}
 }
 

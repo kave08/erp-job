@@ -70,7 +70,13 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	if got.StockID != invoice.WareHouseID {
 		t.Fatalf("unexpected stock id: %d", got.StockID)
 	}
-	if got.SaleCenterID != invoice.CodeMahal {
+	if got.SaleTypeID != invoice.SNoePardakht {
+		t.Fatalf("unexpected sale type id: %d", got.SaleTypeID)
+	}
+	if got.DeliveryCenterID != invoice.SNoePardakht {
+		t.Fatalf("unexpected delivery center id: %d", got.DeliveryCenterID)
+	}
+	if got.SaleCenterID != invoice.WareHouseID {
 		t.Fatalf("unexpected sale center id: %d", got.SaleCenterID)
 	}
 	if got.PaymentWayID != invoice.SNoePardakht {
@@ -118,12 +124,86 @@ func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
 		}),
 	}
 
-	if err := client.PostInvoiceToSaleOrder(context.Background(), []domain.Invoices{{InvoiceId: 91, CustomerID: 1}}); err != nil {
+	if err := client.PostInvoiceToSaleOrder(context.Background(), []domain.Invoices{{
+		InvoiceId:     91,
+		CustomerID:    1,
+		WareHouseID:   22,
+		SNoePardakht:  44,
+		ProductID:     55,
+		ProductCount:  2,
+		ProductFee:    3,
+		VisitorCode:   "66",
+		TozihatFaktor: "detail",
+	}}); err != nil {
 		t.Fatalf("PostInvoiceToSaleOrder returned error: %v", err)
 	}
 
-	if len(received) != 1 || received[0].SecondNumber != 91 {
+	if len(received) != 1 {
+		t.Fatalf("expected 1 sale order payload, got %#v", received)
+	}
+
+	if received[0].SecondNumber != 91 {
 		t.Fatalf("expected sale order second number 91, got %#v", received)
+	}
+	if received[0].SaleTypeId != 44 {
+		t.Fatalf("unexpected sale type id: %d", received[0].SaleTypeId)
+	}
+	if received[0].DeliveryCenterID != 44 {
+		t.Fatalf("unexpected delivery center id: %d", received[0].DeliveryCenterID)
+	}
+	if received[0].SaleCenterID != 22 {
+		t.Fatalf("unexpected sale center id: %d", received[0].SaleCenterID)
+	}
+	if received[0].SellerVisitorID != 66 {
+		t.Fatalf("unexpected seller visitor id: %d", received[0].SellerVisitorID)
+	}
+}
+
+func TestPostInvoiceToSaleProformaAlignsReferenceIDs(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	var received []domain.SaleProforma
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSaleProforma(context.Background(), []domain.Invoices{{
+		InvoiceId:     91,
+		CustomerID:    1,
+		WareHouseID:   22,
+		SNoePardakht:  44,
+		ProductID:     55,
+		ProductCount:  2,
+		ProductFee:    3,
+		VisitorCode:   "66",
+		TozihatFaktor: "detail",
+	}}); err != nil {
+		t.Fatalf("PostInvoiceToSaleProforma returned error: %v", err)
+	}
+
+	if len(received) != 1 {
+		t.Fatalf("expected 1 sale proforma payload, got %#v", received)
+	}
+
+	if received[0].SaleTypeId != 44 {
+		t.Fatalf("unexpected sale type id: %d", received[0].SaleTypeId)
+	}
+	if received[0].DeliveryCenterID != 44 {
+		t.Fatalf("unexpected delivery center id: %d", received[0].DeliveryCenterID)
+	}
+	if received[0].SaleCenterID != 22 {
+		t.Fatalf("unexpected sale center id: %d", received[0].SaleCenterID)
 	}
 }
 
@@ -182,6 +262,44 @@ func TestPostInvoiceToSalerSelectRejectsInvalidVisitorCodeBeforeHTTP(t *testing.
 
 	if requests != 0 {
 		t.Fatalf("expected no HTTP request on invalid visitor code, got %d", requests)
+	}
+}
+
+func TestPostInvoiceToSaleTypeSelectUsesStableCodeFromSNoePardakht(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	var received []domain.SaleTypeSelect
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy())
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostInvoiceToSaleTypeSelect(context.Background(), []domain.Invoices{{
+		SNoePardakht:   44,
+		Codekala:       "should-not-be-used",
+		TxtNoePardakht: "cash",
+	}}); err != nil {
+		t.Fatalf("PostInvoiceToSaleTypeSelect returned error: %v", err)
+	}
+
+	if len(received) != 1 {
+		t.Fatalf("expected 1 sale type payload, got %#v", received)
+	}
+	if received[0].BuySaleTypeCode != "44" {
+		t.Fatalf("unexpected sale type code: %q", received[0].BuySaleTypeCode)
+	}
+	if received[0].BuySaleTypeDesc != "cash" {
+		t.Fatalf("unexpected sale type desc: %q", received[0].BuySaleTypeDesc)
 	}
 }
 

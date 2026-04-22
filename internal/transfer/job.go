@@ -154,6 +154,8 @@ func (j *Job) runInvoices(ctx context.Context) error {
 }
 
 func (j *Job) syncInvoices(ctx context.Context, invoices []domain.Invoices) error {
+	j.warnSaleTypeConflicts(invoices)
+
 	operations := []invoiceOperation{
 		{
 			name:      "sale payment",
@@ -506,5 +508,28 @@ func buildDeliveredRecords[T any](candidates []deliveryCandidate[T]) []store.Del
 func noErrEntityKey[T any](fn func(T) string) func(T) (string, error) {
 	return func(item T) (string, error) {
 		return fn(item), nil
+	}
+}
+
+func (j *Job) warnSaleTypeConflicts(invoices []domain.Invoices) {
+	if j.log == nil {
+		return
+	}
+
+	descriptions := make(map[int]string, len(invoices))
+	for _, invoice := range invoices {
+		if invoice.TxtNoePardakht == "" {
+			continue
+		}
+
+		if previous, exists := descriptions[invoice.SNoePardakht]; exists && previous != "" && previous != invoice.TxtNoePardakht {
+			j.log.Warnw("conflicting sale type descriptions in invoice batch",
+				"sale_type_id", invoice.SNoePardakht,
+				"previous_desc", previous,
+				"current_desc", invoice.TxtNoePardakht,
+			)
+		}
+
+		descriptions[invoice.SNoePardakht] = invoice.TxtNoePardakht
 	}
 }

@@ -68,9 +68,9 @@ func (c *Client) PostInvoiceToSaleFactor(ctx context.Context, invoices []domain.
 			VoucherDate:      item.InvoiceDate,
 			StockID:          item.WareHouseID,
 			VoucherDesc:      "ETL-Form Fararavand",
-			SaleTypeID:       10000001,
-			DeliveryCenterID: 10000002,
-			SaleCenterID:     item.CodeMahal,
+			SaleTypeID:       item.SNoePardakht,
+			DeliveryCenterID: item.SNoePardakht,
+			SaleCenterID:     item.WareHouseID,
 			PaymentWayID:     item.SNoePardakht,
 			SellerID:         item.CCForoshandeh,
 			SaleManID:        item.CodeForoshandeh,
@@ -120,17 +120,21 @@ func (c *Client) PostCustomerToSaleCustomer(ctx context.Context, customers []dom
 func (c *Client) PostInvoiceToSaleOrder(ctx context.Context, invoices []domain.Invoices) error {
 	payload := make([]domain.SaleOrder, 0, len(invoices))
 	for _, item := range invoices {
+		visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
+		if err != nil {
+			return err
+		}
 		payload = append(payload, domain.SaleOrder{
 			CustomerId:       item.CustomerID,
 			VoucherDate:      item.InvoiceDate,
 			SecondNumber:     item.InvoiceId,
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
-			SaleTypeId:       10000001,
-			DeliveryCenterID: 10000002,
-			SaleCenterID:     item.CodeMahal,
+			SaleTypeId:       item.SNoePardakht,
+			DeliveryCenterID: item.SNoePardakht,
+			SaleCenterID:     item.WareHouseID,
 			PaymentWayID:     item.SNoePardakht,
-			SellerVisitorID:  item.CCForoshandeh,
+			SellerVisitorID:  visitorID,
 			ServiceGoodsID:   item.ProductID,
 			Quantity:         float64(item.ProductCount),
 			Fee:              float64(item.ProductFee),
@@ -196,8 +200,8 @@ func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domai
 			VoucherDesc:      "",
 			StockID:          item.WareHouseID,
 			SaleTypeId:       item.SNoePardakht,
-			DeliveryCenterID: 0,
-			SaleCenterID:     0,
+			DeliveryCenterID: item.SNoePardakht,
+			SaleCenterID:     item.WareHouseID,
 			PaymentWayID:     item.SNoePardakht,
 			SellerVisitorID:  visitorCode,
 			ServiceGoodsID:   item.ProductID,
@@ -212,10 +216,22 @@ func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domai
 
 func (c *Client) PostInvoiceToSaleTypeSelect(ctx context.Context, invoices []domain.Invoices) error {
 	payload := make([]domain.SaleTypeSelect, 0, len(invoices))
+	descriptions := make(map[int]string, len(invoices))
 	for _, item := range invoices {
+		if item.TxtNoePardakht != "" {
+			if previous, exists := descriptions[item.SNoePardakht]; exists && previous != "" && previous != item.TxtNoePardakht && c.log != nil {
+				c.log.Warnw("conflicting sale type descriptions in invoice batch",
+					"sale_type_id", item.SNoePardakht,
+					"previous_desc", previous,
+					"current_desc", item.TxtNoePardakht,
+				)
+			}
+			descriptions[item.SNoePardakht] = item.TxtNoePardakht
+		}
+
 		payload = append(payload, domain.SaleTypeSelect{
 			BuySaleTypeID:   item.SNoePardakht,
-			BuySaleTypeCode: item.Codekala,
+			BuySaleTypeCode: strconv.Itoa(item.SNoePardakht),
 			BuySaleTypeDesc: item.TxtNoePardakht,
 		})
 	}

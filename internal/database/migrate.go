@@ -78,23 +78,12 @@ func loadAppliedMigrations(ctx context.Context, db *sql.DB) (map[string]bool, er
 }
 
 func applyMigration(ctx context.Context, db *sql.DB, version, script string) error {
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin migration %s: %w", version, err)
-	}
-
-	if _, err := tx.ExecContext(ctx, strings.TrimSpace(script)); err != nil {
-		_ = tx.Rollback()
+	if _, err := db.ExecContext(ctx, strings.TrimSpace(script)); err != nil {
 		return fmt.Errorf("apply migration %s: %w", version, err)
 	}
 
-	if _, err := tx.ExecContext(ctx, `INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)`, version, time.Now().UTC()); err != nil {
-		_ = tx.Rollback()
+	if _, err := db.ExecContext(ctx, `INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)`, version, time.Now().UTC()); err != nil {
 		return fmt.Errorf("record migration %s: %w", version, err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit migration %s: %w", version, err)
 	}
 
 	return nil
