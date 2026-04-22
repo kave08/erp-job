@@ -1,4 +1,4 @@
-package models
+package domain
 
 import "time"
 
@@ -35,6 +35,7 @@ type SaleCenter4SaleSelect struct {
 	StockCode string `json:"stock_code"`
 	StockDesc string `json:"stock_desc"`
 }
+
 type SalePaymentSelect struct {
 	PaymentWayID   int    `json:"payment_way_id"`
 	PaymentwayDesc string `json:"payment_way_desc"`
@@ -46,7 +47,7 @@ type SaleCenterSelect struct {
 	CenterDesc  string `json:"center_desc"`
 }
 
-type DeliverCenter_SaleSelect struct {
+type DeliverCenterSaleSelect struct {
 	CentersID   int    `json:"centers_id"`
 	CentersCode string `json:"centers_code"`
 }

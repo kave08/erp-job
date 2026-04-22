@@ -10,8 +10,9 @@ import (
 var configPath string
 
 var rootCMD = &cobra.Command{
-	Use:   "erp-job",
-	Short: "ETL between erps service!",
+	Use:          "erp-job",
+	Short:        "ETL between erps service!",
+	SilenceUsage: true,
 }
 
 func init() {
@@ -21,7 +22,7 @@ func init() {
 
 func Execute() {
 	if err := rootCMD.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

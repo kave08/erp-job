@@ -1,15 +1,6 @@
-package models
+package domain
 
 import "time"
-
-type Fararavand struct {
-	BaseData      BaseData
-	Customers     Customers
-	Products      Products
-	Invoices      Invoices
-	Treasuries    Treasuries
-	InvoiceReturn InvoiceReturn
-}
 
 type BaseData struct {
 	PaymentTypes []struct {
@@ -119,7 +110,7 @@ type Invoices struct {
 	BranchID                  int       `json:"branchId"`
 	CodeDoreh                 int       `json:"codeDoreh"`
 	InvoiceId                 int       `json:"invoiceId"`
-	InvoiceDate               string    `json:"invoiceDate"` //"14021027"
+	InvoiceDate               string    `json:"invoiceDate"`
 	InvoiceNumber             int       `json:"invoiceNumber"`
 	CustomerID                int       `json:"customerId"`
 	PaymentTypeID             int       `json:"paymentTypeId"`
@@ -163,39 +154,4 @@ type Invoices struct {
 	TozihatFaktor             string    `json:"tozihatFaktor"`
 	NameAnbar                 string    `json:"nameAnbar"`
 	TxtNoePardakht            string    `json:"txtNoePardakht"`
-}
-
-type Treasuries struct {
-	CodeDoreh                 int    `json:"codeDoreh"`
-	BranchID                  int    `json:"branchId"`
-	SanadTypeID               int    `json:"sanadTypeId"`
-	InvoiceID                 int    `json:"invoiceId"`
-	MablaghKolDaryafti        int    `json:"mablaghKolDaryafti"`
-	MablaghBasteShodeBeFaktor int    `json:"mablaghBasteShodeBeFaktor"`
-	ShomarehHesabID           int    `json:"shomarehHesabId"`
-	CodeGoroh                 string `json:"codeGoroh"`
-	CodeKol                   string `json:"codeKol"`
-	CodeMoeen                 string `json:"codeMoeen"`
-	Tafsily1                  int    `json:"tafsily1"`
-	TarikhDaryaft             string `json:"tarikhDaryaft"`  //"14021025"
-	TarikhSarResid            string `json:"tarikhSarResid"` //"14021025"
-	ShomarehSanad             string `json:"shomarehSanad"`
-}
-
-type InvoiceReturn struct {
-	BranchID                 int    `json:"branchId"`
-	CodeDoreh                int    `json:"codeDoreh"`
-	InvoiceID                int    `json:"invoiceId"`
-	ReturnDate               string `json:"returnDate"` //"14021027"
-	ReturnNumber             int    `json:"returnNumber"`
-	CustomerID               int    `json:"customerId"`
-	PriceKhales              int    `json:"priceKhales"`
-	ReturnMaliatAvarezPrice  int    `json:"returnMaliatAvarezPrice"`
-	Price                    int    `json:"price"`
-	ProductID                int    `json:"productId"`
-	ProductCount             int    `json:"productCount"`
-	ProductFee               int    `json:"productFee"`
-	ProductPrice             int    `json:"productPrice"`
-	IsReturnJayezeh          bool   `json:"isReturnJayezeh"`
-	ProductMaliatAvarezPrice int    `json:"productMaliatAvarezPrice"`
 }

@@ -6,22 +6,25 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"erp-job/config"
-	"erp-job/models"
+	"erp-job/internal/config"
+	"erp-job/internal/domain"
 )
 
 func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	t.Parallel()
 
-	config.Cfg.AryanApp.APIKey = "test-api-key"
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
 
-	var received []models.SaleFactor
+	var received []domain.SaleFactor
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/SaleFactor" {
 			t.Fatalf("unexpected path: %s", r.URL.Path)
 		}
 
-		if got := r.Header.Get("ApiKey"); got != config.Cfg.AryanApp.APIKey {
+		if got := r.Header.Get("ApiKey"); got != cfg.APIKey {
 			t.Fatalf("unexpected api key header: %s", got)
 		}
 
@@ -33,12 +36,10 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}))
 	defer server.Close()
 
-	service := &Aryan{
-		baseURL:    server.URL + "/",
-		httpClient: server.Client(),
-	}
+	cfg.BaseURL = server.URL + "/"
+	client := NewClient(cfg)
 
-	invoice := models.Invoices{
+	invoice := domain.Invoices{
 		CustomerID:      11,
 		InvoiceDate:     "14030101",
 		WareHouseID:     22,
@@ -53,7 +54,7 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 		TozihatFaktor:   "invoice detail",
 	}
 
-	if err := service.PostInvoiceToSaleFactor([]models.Invoices{invoice}); err != nil {
+	if err := client.PostInvoiceToSaleFactor(t.Context(), []domain.Invoices{invoice}); err != nil {
 		t.Fatalf("PostInvoiceToSaleFactor returned error: %v", err)
 	}
 
@@ -96,3 +97,5 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 		t.Fatalf("unexpected detail description: %s", got.DetailDesc)
 	}
 }
+
+const serverURLPlaceholder = "http://invalid.example/"

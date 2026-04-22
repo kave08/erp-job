@@ -1,6 +1,6 @@
 # ERP Job
 
-ERP Job is a command-line tool designed to facilitate the synchronization of data between different ERP (Enterprise Resource Planning) systems. It provides a set of functionalities to transfer and transform data such as invoices, products, and customer information from one system to another, ensuring data consistency and integrity.
+ERP Job is a command-line tool that synchronizes data between Fararavand and Aryan ERP systems. It transfers invoices, products, customers, and base data while persisting sync checkpoints in MySQL so repeated runs can continue incrementally.
 
 ## Features
 
@@ -17,25 +17,36 @@ ERP Job is a command-line tool designed to facilitate the synchronization of dat
 - MySQL (version 5.7 or higher)
 - Access to ERP systems' APIs
 
-### Installation
+### Build
 
-1. Clone the repository:
-sh git clone https://github.com/kave08/erp-job.git
-
-2. Navigate to the project directory:
-sh cd erp-job
-
-3. Build the project:
+```sh
+go build .
+```
 
 ### Configuration
 
-Before running the application, configure the necessary API keys and database connection strings in the `config` directory.
+Before running the application, create `env.yml` from `env.example.yml` and fill in the ERP and MySQL credentials.
 
 ### Usage
 
-Run the application with the following command:
+Run the sync job with:
 
-sh ./erp-job [transfer]
+```sh
+./erp-job transfer --config-path env.yml
+```
+
+## Architecture
+
+The project is organized as an application, not a reusable library, so implementation packages now live under `internal/`:
+
+- `internal/app`: application wiring and startup flow
+- `internal/config`: config loading from YAML and environment overrides
+- `internal/database`: MySQL connection setup
+- `internal/domain`: Fararavand source models and Aryan target payload models
+- `internal/source/fararavand`: HTTP client for paged Fararavand reads
+- `internal/target/aryan`: HTTP client for Aryan write operations
+- `internal/store` and `internal/store/mysql`: checkpoint interfaces and MySQL persistence
+- `internal/transfer`: sync orchestration and checkpoint-aware batch processing
 
 ## Docker
 
@@ -67,20 +78,6 @@ docker compose run --rm erp-job
 
 Use [`env.example.yml`](env.example.yml) as the template for the mounted configuration. In containers, `APP.LOG_PATH: "/tmp/erp-job-logs"` is a safe default if file logs are needed; stdout logging is enabled either way.
 
-
-## Modules
-
-### Fararavand
-
-The `fararavand.go` module contains the logic for interacting with the Fararavand ERP system. It defines an interface for the operations that can be performed and a struct that implements these operations.
-
-### Aryan
-
-The `aryan.go` module contains the logic for interacting with the Aryan ERP system. Similar to the Fararavand module, it defines an interface and a struct for the Aryan-specific operations.
-
-### Database
-
-The `database.go` module in the `repository/database` directory handles all database-related operations. It provides functions to insert and retrieve the maximum ID values for various synchronization operations, ensuring that only new data is transferred between systems.
 
 ## Contributing
 

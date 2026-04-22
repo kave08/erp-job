@@ -1,7 +1,6 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -10,14 +9,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var Cfg config
-
-type config struct {
+type Config struct {
 	AryanApp      AryanApp      `yaml:"ARYAN_APP"`
 	FararavandApp FararavandApp `yaml:"FARARAVAND_APP"`
 	Database      Database      `yaml:"DATABASE"`
 	App           App           `yaml:"APP"`
 }
+
 type AryanApp struct {
 	BaseURL  string        `yaml:"BASE_URL"`
 	APIKey   string        `yaml:"API_KEY"`
@@ -25,6 +23,7 @@ type AryanApp struct {
 	Pass     string        `yaml:"Pass"`
 	Timeout  time.Duration `yaml:"TIMEOUT"`
 }
+
 type FararavandApp struct {
 	BaseURL  string        `yaml:"BASE_URL"`
 	APIKey   string        `yaml:"API_KEY"`
@@ -47,38 +46,24 @@ type App struct {
 	LogPath string `yaml:"LOG_PATH"`
 }
 
-type SetupResult struct {
-	AryanApp        AryanApp
-	MysqlConnection *sql.DB
-}
+func Load(configPath string) (Config, error) {
+	var cfg Config
 
-func LoadConfig(configPath string) (*SetupResult, error) {
-	viper.SetEnvPrefix("erp-job")
-	viper.AddConfigPath(".")
-	viper.AutomaticEnv()
-	viper.SetConfigFile(configPath)
-	viper.AddConfigPath(".")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v := viper.New()
+	v.SetEnvPrefix("erp-job")
+	v.AutomaticEnv()
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.SetConfigFile(configPath)
 
-	err := viper.MergeInConfig()
-	if err != nil {
-		return nil, fmt.Errorf("read config %q: %w", configPath, err)
+	if err := v.MergeInConfig(); err != nil {
+		return cfg, fmt.Errorf("read config %q: %w", configPath, err)
 	}
 
-	err = viper.Unmarshal(&Cfg, func(config *mapstructure.DecoderConfig) {
-		config.TagName = "yaml"
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal config: %w", err)
+	if err := v.Unmarshal(&cfg, func(dc *mapstructure.DecoderConfig) {
+		dc.TagName = "yaml"
+	}); err != nil {
+		return cfg, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	mdb, err := initializeMySQL(Cfg.Database)
-	if err != nil {
-		return nil, fmt.Errorf("connect to mysql: %w", err)
-	}
-
-	return &SetupResult{
-		AryanApp:        Cfg.AryanApp,
-		MysqlConnection: mdb,
-	}, nil
+	return cfg, nil
 }

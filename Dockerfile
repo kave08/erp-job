@@ -16,12 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 COPY main.go ./
 COPY cmd ./cmd
-COPY config ./config
-COPY models ./models
-COPY repository ./repository
-COPY services ./services
-COPY sync_data ./sync_data
-COPY utility ./utility
+COPY internal ./internal
 
 ARG TARGETOS
 ARG TARGETARCH
