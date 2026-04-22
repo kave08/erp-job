@@ -2,13 +2,13 @@ package syncdata
 
 import (
 	"database/sql"
-	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -50,9 +50,17 @@ func (c Customer) Customers() error {
 
 	for {
 		lastCustomerId, lastPageNumber, err := c.repos.Database.GetCustomerProgress()
-		if err == sql.ErrNoRows {
-			lastId = 0
-			pageNumber = 0
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				lastId = 0
+				pageNumber = 0
+			} else {
+				c.log.Errorw("GetCustomerProgress encountered an error: ",
+					"error", err,
+				)
+
+				return err
+			}
 		} else {
 			lastId = lastCustomerId
 			pageNumber = lastPageNumber + pageSize + 1
@@ -77,18 +85,8 @@ func (c Customer) Customers() error {
 			return err
 		}
 
-		if res.StatusCode != http.StatusOK {
-			c.log.Errorw("get customer http request failed.",
-				"error", err,
-				"status:", res.StatusCode,
-				"response", res.Body,
-			)
-
-			return fmt.Errorf("get customer http request failed. status: %d, response: %v", res.StatusCode, res.Body)
-		}
-
 		response := new(CustomerResponse)
-		err = json.NewDecoder(res.Body).Decode(response)
+		err = decodeJSONResponse(res, response)
 		if err != nil {
 			c.log.Errorw("get customer decode response encountered an error: ",
 				"error", err,

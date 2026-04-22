@@ -47,82 +47,26 @@ type Param struct {
 // It maps invoice fields to SaleFactor fields and sends a POST request to the sale factor service.
 func (a *Aryan) PostInvoiceToSaleFactor(fp []models.Invoices) error {
 	var newSaleFactor []models.SaleFactor
-	var req = []Req{}
 
 	for _, item := range fp {
-		req = append(req, Req{
-			ID: "SaleFactor",
-			Params: []Param{
-				{
-					Name:  "CustomerId",
-					Value: item.CustomerID,
-				},
-				{
-					Name:  "VoucherDate",
-					Value: item.InvoiceDate,
-				},
-				{
-					Name:  "StockID",
-					Value: item.WareHouseID,
-				},
-				{
-					Name:  "VoucherDesc",
-					Value: "ETL-Form Fararavand",
-				},
-				{
-					Name:  "SaleTypeId",
-					Value: 10000001,
-				},
-				{
-					Name:  "DeliveryCenterID",
-					Value: 10000002,
-				},
-				{
-					Name:  "SaleCenterID",
-					Value: item.CodeMahal,
-				},
-				{
-					Name:  "PaymentWayID",
-					Value: item.SNoePardakht,
-				},
-				{
-					Name:  "SellerID",
-					Value: item.CCForoshandeh,
-				},
-				{
-					Name:  "SaleManID",
-					Value: item.CodeForoshandeh,
-				},
-				{
-					Name:  "DistributerId",
-					Value: 0,
-				},
-				{
-					Name:  "CustomerId",
-					Value: item.CustomerID,
-				},
-			},
+		newSaleFactor = append(newSaleFactor, models.SaleFactor{
+			CustomerID:       item.CustomerID,
+			VoucherDate:      item.InvoiceDate,
+			StockID:          item.WareHouseID,
+			VoucherDesc:      "ETL-Form Fararavand",
+			SaleTypeID:       10000001,
+			DeliveryCenterID: 10000002,
+			SaleCenterID:     item.CodeMahal,
+			PaymentWayID:     item.SNoePardakht,
+			SellerID:         item.CCForoshandeh,
+			SaleManID:        item.CodeForoshandeh,
+			DistributerID:    0,
+			SecondNumber:     strconv.Itoa(item.InvoiceId),
+			ServiceGoodsID:   item.ProductID,
+			Quantity:         float64(item.ProductCount),
+			Fee:              float64(item.ProductFee),
+			DetailDesc:       item.TozihatFaktor,
 		})
-
-		//TODO:
-		// ServiceGoodsID:   item.ProductID, // ok
-		// 	Quantity:         float64(item.ProductCount),
-		// 	Fee:              float64(item.ProductFee),
-		// 	VoucherDesc:      "ETL-Form Fararavand",
-		// 	SecondNumber:     strconv.Itoa(item.InvoiceId),
-
-		// newSaleFactor = append(newSaleFactor, models.SaleFactor{
-		// CustomerId:       item.CustomerID,
-
-		// VoucherDate:      item.InvoiceDate,
-		// StockID:          item.WareHouseID,
-		// SaleTypeId:       10000001,
-		// DeliveryCenterID: 10000002,
-		// SaleCenterID:     item.CodeMahal,
-		// PaymentWayID:     item.SNoePardakht,
-		// SellerID:         item.CCForoshandeh,
-		// SaleManID:        item.CodeForoshandeh,
-		// })s
 	}
 
 	body, err := json.Marshal(newSaleFactor)

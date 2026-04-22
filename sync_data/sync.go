@@ -1,16 +1,13 @@
 package syncdata
 
 import (
-	"erp-job/config"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
-	"net/http"
+	"fmt"
 )
 
 type Sync struct {
-	baseURL    string
-	httpClient *http.Client
 	repos      *repository.Repository
 	aryan      aryan.AryanInterface
 	fararavand fararavand.Interface
@@ -18,23 +15,28 @@ type Sync struct {
 
 func NewSync(repos *repository.Repository, fr fararavand.Interface, ar aryan.AryanInterface) *Sync {
 	return &Sync{
-		baseURL:    config.Cfg.FararavandApp.BaseURL,
 		repos:      repos,
 		aryan:      ar,
 		fararavand: fr,
-		httpClient: &http.Client{
-			Timeout: config.Cfg.FararavandApp.Timeout,
-		},
 	}
 }
 
 func (s *Sync) Sync() error {
-	NewInvoice(s.repos, s.fararavand, s.aryan)
-	NewBaseData(s.repos, s.fararavand, s.aryan)
-	NewCustomer(s.repos, s.fararavand, s.aryan)
-	NewInvoiceReturn(s.repos, s.fararavand, s.aryan)
-	NewProduct(s.repos, s.fararavand, s.aryan)
-	NewTreasurie(s.repos, s.fararavand, s.aryan)
+	steps := []struct {
+		name string
+		run  func() error
+	}{
+		{name: "invoice", run: NewInvoice(s.repos, s.fararavand, s.aryan).Invoices},
+		{name: "base data", run: NewBaseData(s.repos, s.fararavand, s.aryan).BaseData},
+		{name: "customer", run: NewCustomer(s.repos, s.fararavand, s.aryan).Customers},
+		{name: "product", run: NewProduct(s.repos, s.fararavand, s.aryan).Products},
+	}
+
+	for _, step := range steps {
+		if err := step.run(); err != nil {
+			return fmt.Errorf("%s sync failed: %w", step.name, err)
+		}
+	}
 
 	return nil
 }

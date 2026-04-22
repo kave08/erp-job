@@ -6,6 +6,7 @@ import (
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
+	"errors"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -34,6 +35,5 @@ func NewTreasurie(repos *repository.Repository, fr fararavand.Interface, ar arya
 }
 
 func (t *Treasurie) Treasuries() error {
-
-	return nil
+	return errors.New("treasury sync is not implemented: missing Aryan target contract")
 }

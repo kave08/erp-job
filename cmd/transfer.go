@@ -6,6 +6,7 @@ import (
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	syncdata "erp-job/sync_data"
+	"erp-job/utility/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -14,22 +15,26 @@ import (
 var transferCmd = &cobra.Command{
 	Use:   "transfer",
 	Short: "transfer will fetch data from fararavnd and insert it to aryan",
-	Run: func(cmd *cobra.Command, args []string) {
-		transfer()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return transfer()
 	},
 }
 
-func transfer() {
+func transfer() error {
+	setup, err := config.LoadConfig(configPath)
+	if err != nil {
+		return err
+	}
+	defer setup.MysqlConnection.Close()
 
-	mdb := config.LoadConfig(configPath)
+	logger.Initialize()
 
-	repos := repository.NewRepository(mdb.MysqlConnection)
+	repos := repository.NewRepository(setup.MysqlConnection)
 
 	ar := aryan.NewAryan(repos)
 	fr := fararavand.NewFararavand(repos, ar)
 
-	syncdata.NewSync(repos, fr, ar)
-
+	return syncdata.NewSync(repos, fr, ar).Sync()
 }
 
 func init() {

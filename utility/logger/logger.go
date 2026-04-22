@@ -4,40 +4,49 @@ import (
 	"erp-job/config"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var lg *zap.SugaredLogger
+var (
+	lg       *zap.SugaredLogger
+	initOnce sync.Once
+)
 
 func Initialize() {
+	initOnce.Do(func() {
+		lg = buildLogger(config.Cfg.App.LogPath)
+	})
+}
 
-	logfile := fmt.Sprintf("%s/debuglog-%s.log", config.Cfg.App.LogPath, time.Now().Format("2006-01-02T15:04"))
-
-	file, err := os.Create(logfile)
-	if err != nil {
-		panic(fmt.Sprintf("failed to create log file: %s", err))
+func buildLogger(logPath string) *zap.SugaredLogger {
+	highPriorityOutput := zapcore.Lock(os.Stdout)
+	stdoutEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	cores := []zapcore.Core{
+		zapcore.NewCore(stdoutEncoder, highPriorityOutput, zapcore.DebugLevel),
 	}
 
-	// Create a WriteSyncer for the log file
-	lowPriorityOutput := zapcore.AddSync(file)
+	if logPath != "" {
+		if err := os.MkdirAll(logPath, 0o755); err == nil {
+			logfile := filepath.Join(logPath, fmt.Sprintf("debuglog-%s.log", time.Now().Format("2006-01-02T15:04")))
+			if file, err := os.Create(logfile); err == nil {
+				fileEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+				cores = append(cores, zapcore.NewCore(fileEncoder, zapcore.AddSync(file), zapcore.ErrorLevel))
+			}
+		}
+	}
 
-	highPriorityOutput := zapcore.Lock(os.Stdout)
-
-	stdoutEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
-	fileEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
-
-	// Use the zapcore.Level values directly for setting the log level
-	core := zapcore.NewTee(
-		zapcore.NewCore(stdoutEncoder, highPriorityOutput, zapcore.DebugLevel),
-		zapcore.NewCore(fileEncoder, lowPriorityOutput, zapcore.ErrorLevel),
-	)
-
-	lg = zap.New(core).Sugar()
+	return zap.New(zapcore.NewTee(cores...)).Sugar()
 }
 
 func Logger() *zap.SugaredLogger {
+	if lg == nil {
+		lg = buildLogger("")
+	}
+
 	return lg
 }

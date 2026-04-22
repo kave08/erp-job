@@ -6,6 +6,7 @@ import (
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
+	"errors"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -34,6 +35,5 @@ func NewInvoiceReturn(repos *repository.Repository, fr fararavand.Interface, ar 
 }
 
 func (i *InvoiceReturn) InvoiceReturns() error {
-
-	return nil
+	return errors.New("invoice return sync is not implemented: missing Aryan target contract")
 }

@@ -2,13 +2,13 @@ package syncdata
 
 import (
 	"database/sql"
-	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -51,9 +51,17 @@ func (b *BaseData) BaseData() error {
 	for {
 
 		lastBaseDataId, lastPageNumber, err := b.repos.Database.GetBaseDataProgress()
-		if err == sql.ErrNoRows {
-			lastId = 0
-			pageNumber = 0
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				lastId = 0
+				pageNumber = 0
+			} else {
+				b.log.Errorw("GetBaseDataProgress encountered an error: ",
+					"error", err,
+				)
+
+				return err
+			}
 		} else {
 			lastId = lastBaseDataId
 			pageNumber = lastPageNumber + pageSize + 1
@@ -83,18 +91,8 @@ func (b *BaseData) BaseData() error {
 			return err
 		}
 
-		if res.StatusCode != http.StatusOK {
-			b.log.Errorw("get base data http request failed.",
-				"error", err,
-				"status:", res.StatusCode,
-				"response", res.Body,
-			)
-
-			return fmt.Errorf("get invoice http request failed. status: %d, response: %v", res.StatusCode, res.Body)
-		}
-
 		response := new(BaseDataResponse)
-		err = json.NewDecoder(res.Body).Decode(response)
+		err = decodeJSONResponse(res, response)
 		if err != nil {
 			b.log.Errorw("get base data decode response encountered an error: ",
 				"error", err,

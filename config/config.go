@@ -52,7 +52,7 @@ type SetupResult struct {
 	MysqlConnection *sql.DB
 }
 
-func LoadConfig(configPath string) *SetupResult {
+func LoadConfig(configPath string) (*SetupResult, error) {
 	viper.SetEnvPrefix("erp-job")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
@@ -62,27 +62,23 @@ func LoadConfig(configPath string) *SetupResult {
 
 	err := viper.MergeInConfig()
 	if err != nil {
-		fmt.Println("Error in reading config")
-		panic(err)
+		return nil, fmt.Errorf("read config %q: %w", configPath, err)
 	}
 
 	err = viper.Unmarshal(&Cfg, func(config *mapstructure.DecoderConfig) {
 		config.TagName = "yaml"
 	})
 	if err != nil {
-		fmt.Println("Error in unmarshaling config")
-		panic(err)
+		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
-
-	fmt.Printf("%v", Cfg)
 
 	mdb, err := initializeMySQL(Cfg.Database)
 	if err != nil {
-		panic(fmt.Sprintf("error at connecting to mysql database. err: %v, connection info: %+v", err, Cfg.Database))
+		return nil, fmt.Errorf("connect to mysql: %w", err)
 	}
 
 	return &SetupResult{
 		AryanApp:        Cfg.AryanApp,
 		MysqlConnection: mdb,
-	}
+	}, nil
 }

@@ -4,13 +4,13 @@ package syncdata
 
 import (
 	"database/sql"
-	"encoding/json"
 	"erp-job/config"
 	"erp-job/models"
 	"erp-job/repository"
 	"erp-job/services/aryan"
 	"erp-job/services/fararavand"
 	"erp-job/utility/logger"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -52,9 +52,17 @@ func (p Product) Products() error {
 
 	for {
 		lastProductId, lastPageNumber, err := p.repos.Database.GetProductProgress()
-		if err == sql.ErrNoRows {
-			lastId = 0
-			pageNumber = 0
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				lastId = 0
+				pageNumber = 0
+			} else {
+				p.log.Errorw("GetProductProgress encountered an error: ",
+					"error", err,
+				)
+
+				return err
+			}
 		} else {
 			lastId = lastProductId
 			pageNumber = lastPageNumber + pageSize + 1
@@ -85,18 +93,8 @@ func (p Product) Products() error {
 			return err
 		}
 
-		if res.StatusCode != http.StatusOK {
-			p.log.Errorw("get product http request failed.",
-				"error", err,
-				"status:", res.StatusCode,
-				"response", res.Body,
-			)
-
-			return fmt.Errorf("get product http request failed. status: %d, response: %v", res.StatusCode, res.Body)
-		}
-
 		response := new(ProductResponse)
-		err = json.NewDecoder(res.Body).Decode(response)
+		err = decodeJSONResponse(res, response)
 		if err != nil {
 			p.log.Errorw("get product decode response encountered an error: ",
 				"error", err,
