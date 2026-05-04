@@ -65,8 +65,18 @@ func TestJobRunsMasterDataBeforeInvoicesAndInvoiceReferencesBeforeDocuments(t *t
 					ID   int    `json:"id"`
 					Name string `json:"name"`
 				}{{ID: 30, Name: "cash"}},
+				Branches: []struct {
+					ID   int    `json:"id"`
+					Name string `json:"name"`
+				}{{ID: 50, Name: "main"}},
 			},
-			30: {},
+			30: {
+				Branches: []struct {
+					ID   int    `json:"id"`
+					Name string `json:"name"`
+				}{{ID: 50, Name: "main"}},
+			},
+			50: {},
 		},
 	}
 
@@ -76,11 +86,13 @@ func TestJobRunsMasterDataBeforeInvoicesAndInvoiceReferencesBeforeDocuments(t *t
 
 	expected := []string{
 		string(store.OperationBaseDataDeliverCenter),
+		string(store.OperationBaseDataSaleCenterSelect),
 		string(store.OperationCustomerSaleCustomer),
 		string(store.OperationProductsGoods),
 		string(store.OperationInvoiceSalePayment),
 		string(store.OperationInvoiceSaleCenter),
 		string(store.OperationInvoiceSalerSelect),
+		string(store.OperationInvoiceSaleSellerVisitor),
 		string(store.OperationInvoiceSaleTypeSelect),
 		string(store.OperationInvoiceSaleFactor),
 		string(store.OperationInvoiceSaleOrder),
@@ -384,6 +396,10 @@ func (f *fakeTarget) PostInvoiceToSaleTypeSelect(ctx context.Context, invoices [
 	return f.recordInvoiceOp(ctx, string(store.OperationInvoiceSaleTypeSelect), invoices)
 }
 
+func (f *fakeTarget) PostInvoiceToSaleSellerVisitor(ctx context.Context, invoices []domain.Invoices) error {
+	return f.recordInvoiceOp(ctx, string(store.OperationInvoiceSaleSellerVisitor), invoices)
+}
+
 func (f *fakeTarget) PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, baseData domain.BaseData) error {
 	if err := f.emitResult(ctx, string(store.OperationBaseDataDeliverCenter)); err != nil {
 		return err
@@ -391,6 +407,19 @@ func (f *fakeTarget) PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, 
 
 	f.calls = append(f.calls, string(store.OperationBaseDataDeliverCenter))
 	f.baseDataOps = append(f.baseDataOps, baseData)
+	return nil
+}
+
+func (f *fakeTarget) PostBaseDataToSaleCenterSelect(ctx context.Context, baseData domain.BaseData) error {
+	if err := f.emitResult(ctx, string(store.OperationBaseDataSaleCenterSelect)); err != nil {
+		return err
+	}
+
+	f.calls = append(f.calls, string(store.OperationBaseDataSaleCenterSelect))
+	return nil
+}
+
+func (f *fakeTarget) PostAddSubElementSelect(_ context.Context) error {
 	return nil
 }
 

@@ -29,9 +29,12 @@ const (
 	saleTypeSelectPath          = "SaleTypeSelect"
 	saleCenter4SaleSelectPath   = "SaleCenter4SaleSelect"
 	salePaymentSelectPath       = "SalePaymentSelect"
+	saleCenterSelectPath        = "SaleCenterSelect"
 	deliverCenterSaleSelectPath = "DeliverCenter_SaleSelect"
 	salerSelectPath             = "SalerSelect"
+	saleSellerVisitorPath       = "SaleSellerVisitor"
 	goodsPath                   = "Goods"
+	addSubElementSelectPath     = "AddSubElementSelect"
 	saleProformaPath            = "SaleProforma"
 	saleFactorPath              = "SaleFactor"
 )
@@ -65,161 +68,180 @@ func newClient(cfg config.AryanApp, telemetry *observability.Telemetry, log *zap
 }
 
 func (c *Client) PostInvoiceToSaleFactor(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SaleFactor, 0, len(invoices))
-	for _, item := range invoices {
-		payload = append(payload, domain.SaleFactor{
-			CustomerID:       item.CustomerID,
-			VoucherDate:      item.InvoiceDate,
-			StockID:          item.WareHouseID,
-			VoucherDesc:      "ETL-Form Fararavand",
-			SaleTypeID:       item.SNoePardakht,
-			DeliveryCenterID: item.SNoePardakht,
-			SaleCenterID:     item.WareHouseID,
-			PaymentWayID:     item.SNoePardakht,
-			SellerID:         item.CCForoshandeh,
-			SaleManID:        item.CodeForoshandeh,
-			DistributerID:    0,
-			SecondNumber:     strconv.Itoa(item.InvoiceId),
-			ServiceGoodsID:   item.ProductID,
-			Quantity:         float64(item.ProductCount),
-			Fee:              float64(item.ProductFee),
-			DetailDesc:       item.TozihatFaktor,
+	payloads := make([]ParamsPayload, 0, len(invoices))
+	for i, item := range invoices {
+		payloads = append(payloads, ParamsPayload{
+			ID: saleFactorPath,
+			Params: []ParamEntry{
+				{Name: "isrow", Value: "1"},
+				{Name: "CustomerId", Value: item.CustomerID},
+				{Name: "VoucherDate", Value: item.InvoiceDate},
+				{Name: "SecondNumber", Value: item.InvoiceId},
+				{Name: "VoucherDesc", Value: "ETL-Form Fararavand"},
+				{Name: "StockId", Value: item.WareHouseID},
+				{Name: "SaleTypeId", Value: item.SNoePardakht},
+				{Name: "DeliveryCenterID", Value: item.SNoePardakht},
+				{Name: "SaleCenterID", Value: item.WareHouseID},
+				{Name: "PaymentWayID", Value: item.SNoePardakht},
+				{Name: "SellerVisitorID", Value: item.CCForoshandeh},
+				{Name: "[Inserted]", ArrayValue: []interface{}{i + 1, item.ProductID, item.ProductCount, item.ProductFee, item.TozihatFaktor}},
+				{Name: "[el_Inserted]", ArrayValue: []interface{}{item.CCForoshandeh, 1000, 0}},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleFactorPath, payload)
+	return c.postJSON(ctx, saleFactorPath, payloads)
 }
 
 func (c *Client) PostProductsToGoods(ctx context.Context, products []domain.Products) error {
-	payload := make([]domain.Goods, 0, len(products))
+	payloads := make([]ParamsPayload, 0, len(products))
 	for _, item := range products {
-		payload = append(payload, domain.Goods{
-			ServiceGoodsID:   item.ID,
-			ServiceGoodsCode: item.Code,
-			ServiceGoodsDesc: item.Name,
-			GroupId:          item.FirstProductGroupID,
-			TypeID:           0,
-			SecUnitType:      0,
-			Level1:           0,
-			Level2:           0,
-			Level3:           0,
+		payloads = append(payloads, ParamsPayload{
+			ID: goodsPath,
+			Params: []ParamEntry{
+				{Name: "ServiceGoodsID", Value: item.ID},
+				{Name: "ServiceGoodsCode", Value: item.Code},
+				{Name: "ServiceGoodsDesc", Value: item.Name},
+				{Name: "GroupId", Value: item.FirstProductGroupID},
+				{Name: "TypeID", Value: 0},
+				{Name: "SecUnitType", Value: 0},
+				{Name: "Level1", Value: 0},
+				{Name: "Level2", Value: 0},
+				{Name: "Level3", Value: 0},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, goodsPath, payload)
+	return c.postJSON(ctx, goodsPath, payloads)
 }
 
 func (c *Client) PostCustomerToSaleCustomer(ctx context.Context, customers []domain.Customers) error {
-	payload := make([]domain.SaleCustomer, 0, len(customers))
+	payloads := make([]ParamsPayload, 0, len(customers))
 	for _, item := range customers {
-		payload = append(payload, domain.SaleCustomer{
-			CustomerID:   item.ID,
-			CustomerCode: strconv.Itoa(item.Code),
+		payloads = append(payloads, ParamsPayload{
+			ID: saleCustomerPath,
+			Params: []ParamEntry{
+				{Name: "CustomerID", Value: item.ID},
+				{Name: "CustomerCode", Value: strconv.Itoa(item.Code)},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleCustomerPath, payload)
+	return c.postJSON(ctx, saleCustomerPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSaleOrder(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SaleOrder, 0, len(invoices))
-	for _, item := range invoices {
+	payloads := make([]ParamsPayload, 0, len(invoices))
+	for i, item := range invoices {
 		visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
 		if err != nil {
 			return err
 		}
-		payload = append(payload, domain.SaleOrder{
-			CustomerId:       item.CustomerID,
-			VoucherDate:      item.InvoiceDate,
-			SecondNumber:     item.InvoiceId,
-			VoucherDesc:      "",
-			StockID:          item.WareHouseID,
-			SaleTypeId:       item.SNoePardakht,
-			DeliveryCenterID: item.SNoePardakht,
-			SaleCenterID:     item.WareHouseID,
-			PaymentWayID:     item.SNoePardakht,
-			SellerVisitorID:  visitorID,
-			ServiceGoodsID:   item.ProductID,
-			Quantity:         float64(item.ProductCount),
-			Fee:              float64(item.ProductFee),
-			DetailDesc:       item.TozihatFaktor,
+		payloads = append(payloads, ParamsPayload{
+			ID: saleOrderPath,
+			Params: []ParamEntry{
+				{Name: "isrow", Value: "1"},
+				{Name: "CustomerId", Value: item.CustomerID},
+				{Name: "VoucherDate", Value: item.InvoiceDate},
+				{Name: "SecondNumber", Value: item.InvoiceId},
+				{Name: "VoucherDesc", Value: "ETL-Form Fararavand"},
+				{Name: "StockId", Value: item.WareHouseID},
+				{Name: "SaleTypeId", Value: item.SNoePardakht},
+				{Name: "DeliveryCenterID", Value: item.SNoePardakht},
+				{Name: "SaleCenterID", Value: item.WareHouseID},
+				{Name: "PaymentWayID", Value: item.SNoePardakht},
+				{Name: "SellerVisitorID", Value: visitorID},
+				{Name: "[Inserted]", ArrayValue: []interface{}{i + 1, item.ProductID, item.ProductCount, item.ProductFee, item.TozihatFaktor}},
+				{Name: "[el_Inserted]", ArrayValue: []interface{}{visitorID, 1000, 0}},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleOrderPath, payload)
+	return c.postJSON(ctx, saleOrderPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSalePayment(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SalePaymentSelect, 0, len(invoices))
+	payloads := make([]ParamsPayload, 0, len(invoices))
 	for _, item := range invoices {
-		payload = append(payload, domain.SalePaymentSelect{
-			PaymentWayID:   item.SNoePardakht,
-			PaymentwayDesc: item.TxtNoePardakht,
+		payloads = append(payloads, ParamsPayload{
+			ID: salePaymentSelectPath,
+			Params: []ParamEntry{
+				{Name: "PaymentWayID", Value: item.SNoePardakht},
+				{Name: "PaymentwayDesc", Value: item.TxtNoePardakht},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, salePaymentSelectPath, payload)
+	return c.postJSON(ctx, salePaymentSelectPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSaleCenter(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SaleCenter4SaleSelect, 0, len(invoices))
+	payloads := make([]ParamsPayload, 0, len(invoices))
 	for _, item := range invoices {
-		payload = append(payload, domain.SaleCenter4SaleSelect{
-			StockID:   item.WareHouseID,
-			StockCode: strconv.Itoa(item.WareHouseID),
-			StockDesc: item.NameAnbar,
+		payloads = append(payloads, ParamsPayload{
+			ID: saleCenter4SaleSelectPath,
+			Params: []ParamEntry{
+				{Name: "StockId", Value: item.WareHouseID},
+				{Name: "StockCode", Value: strconv.Itoa(item.WareHouseID)},
+				{Name: "StockDesc", Value: item.NameAnbar},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleCenter4SaleSelectPath, payload)
+	return c.postJSON(ctx, saleCenter4SaleSelectPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSalerSelect(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SalerSelect, 0, len(invoices))
+	payloads := make([]ParamsPayload, 0, len(invoices))
 	for _, item := range invoices {
 		visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
 		if err != nil {
 			return err
 		}
-		payload = append(payload, domain.SalerSelect{
-			SaleVisitorID:   visitorID,
-			SaleVisitorDesc: item.VisitorName,
+		payloads = append(payloads, ParamsPayload{
+			ID: salerSelectPath,
+			Params: []ParamEntry{
+				{Name: "SaleVisitorID", Value: visitorID},
+				{Name: "SaleVisitorDesc", Value: item.VisitorName},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, salerSelectPath, payload)
+	return c.postJSON(ctx, salerSelectPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSaleProforma(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SaleProforma, 0, len(invoices))
-	for _, item := range invoices {
+	payloads := make([]ParamsPayload, 0, len(invoices))
+	for i, item := range invoices {
 		visitorCode, err := domain.ParseVisitorCode(item.VisitorCode)
 		if err != nil {
 			return err
 		}
-		payload = append(payload, domain.SaleProforma{
-			CustomerId:       item.CustomerID,
-			VoucherDate:      item.InvoiceDate,
-			SecondNumber:     item.InvoiceId,
-			VoucherDesc:      "",
-			StockID:          item.WareHouseID,
-			SaleTypeId:       item.SNoePardakht,
-			DeliveryCenterID: item.SNoePardakht,
-			SaleCenterID:     item.WareHouseID,
-			PaymentWayID:     item.SNoePardakht,
-			SellerVisitorID:  visitorCode,
-			ServiceGoodsID:   item.ProductID,
-			Quantity:         float64(item.ProductCount),
-			Fee:              float64(item.ProductFee),
-			DetailDesc:       item.TozihatFaktor,
+		payloads = append(payloads, ParamsPayload{
+			ID: saleProformaPath,
+			Params: []ParamEntry{
+				{Name: "isrow", Value: "1"},
+				{Name: "CustomerId", Value: item.CustomerID},
+				{Name: "VoucherDate", Value: item.InvoiceDate},
+				{Name: "SecondNumber", Value: item.InvoiceId},
+				{Name: "VoucherDesc", Value: "ETL-Form Fararavand"},
+				{Name: "StockId", Value: item.WareHouseID},
+				{Name: "SaleTypeId", Value: item.SNoePardakht},
+				{Name: "DeliveryCenterID", Value: item.SNoePardakht},
+				{Name: "SaleCenterID", Value: item.WareHouseID},
+				{Name: "PaymentWayID", Value: item.SNoePardakht},
+				{Name: "SellerVisitorID", Value: visitorCode},
+				{Name: "[Inserted]", ArrayValue: []interface{}{i + 1, item.ProductID, item.ProductCount, item.ProductFee, item.TozihatFaktor}},
+				{Name: "[el_Inserted]", ArrayValue: []interface{}{visitorCode, 1000, 0}},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleProformaPath, payload)
+	return c.postJSON(ctx, saleProformaPath, payloads)
 }
 
 func (c *Client) PostInvoiceToSaleTypeSelect(ctx context.Context, invoices []domain.Invoices) error {
-	payload := make([]domain.SaleTypeSelect, 0, len(invoices))
+	payloads := make([]ParamsPayload, 0, len(invoices))
 	descriptions := make(map[int]string, len(invoices))
 	for _, item := range invoices {
 		if item.TxtNoePardakht != "" {
@@ -233,26 +255,78 @@ func (c *Client) PostInvoiceToSaleTypeSelect(ctx context.Context, invoices []dom
 			descriptions[item.SNoePardakht] = item.TxtNoePardakht
 		}
 
-		payload = append(payload, domain.SaleTypeSelect{
-			BuySaleTypeID:   item.SNoePardakht,
-			BuySaleTypeCode: strconv.Itoa(item.SNoePardakht),
-			BuySaleTypeDesc: item.TxtNoePardakht,
+		payloads = append(payloads, ParamsPayload{
+			ID: saleTypeSelectPath,
+			Params: []ParamEntry{
+				{Name: "BuySaleTypeID", Value: item.SNoePardakht},
+				{Name: "BuySaleTypeCode", Value: strconv.Itoa(item.SNoePardakht)},
+				{Name: "BuySaleTypeDesc", Value: item.TxtNoePardakht},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, saleTypeSelectPath, payload)
+	return c.postJSON(ctx, saleTypeSelectPath, payloads)
 }
 
 func (c *Client) PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, baseData domain.BaseData) error {
-	payload := make([]domain.DeliverCenterSaleSelect, 0, len(baseData.PaymentTypes))
+	payloads := make([]ParamsPayload, 0, len(baseData.PaymentTypes))
 	for _, item := range baseData.PaymentTypes {
-		payload = append(payload, domain.DeliverCenterSaleSelect{
-			CentersID:   item.ID,
-			CentersCode: strconv.Itoa(item.ID),
+		payloads = append(payloads, ParamsPayload{
+			ID: deliverCenterSaleSelectPath,
+			Params: []ParamEntry{
+				{Name: "CentersID", Value: item.ID},
+				{Name: "CentersCode", Value: strconv.Itoa(item.ID)},
+			},
 		})
 	}
 
-	return c.postJSON(ctx, deliverCenterSaleSelectPath, payload)
+	return c.postJSON(ctx, deliverCenterSaleSelectPath, payloads)
+}
+
+func (c *Client) PostBaseDataToSaleCenterSelect(ctx context.Context, baseData domain.BaseData) error {
+	payloads := make([]ParamsPayload, 0, len(baseData.Branches))
+	for _, item := range baseData.Branches {
+		payloads = append(payloads, ParamsPayload{
+			ID: saleCenterSelectPath,
+			Params: []ParamEntry{
+				{Name: "CentersID", Value: item.ID},
+				{Name: "CentersCode", Value: strconv.Itoa(item.ID)},
+				{Name: "CenterDesc", Value: item.Name},
+			},
+		})
+	}
+
+	return c.postJSON(ctx, saleCenterSelectPath, payloads)
+}
+
+func (c *Client) PostInvoiceToSaleSellerVisitor(ctx context.Context, invoices []domain.Invoices) error {
+	payloads := make([]ParamsPayload, 0, len(invoices))
+	for _, item := range invoices {
+		visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
+		if err != nil {
+			return err
+		}
+		payloads = append(payloads, ParamsPayload{
+			ID: saleSellerVisitorPath,
+			Params: []ParamEntry{
+				{Name: "CentersID", Value: visitorID},
+				{Name: "CentersCode", Value: strconv.Itoa(visitorID)},
+			},
+		})
+	}
+
+	return c.postJSON(ctx, saleSellerVisitorPath, payloads)
+}
+
+func (c *Client) PostAddSubElementSelect(ctx context.Context) error {
+	payload := ParamsPayload{
+		ID: addSubElementSelectPath,
+		Params: []ParamEntry{
+			{Name: "IsStruct", Value: 1},
+		},
+	}
+
+	return c.postJSON(ctx, addSubElementSelectPath, payload)
 }
 
 func (c *Client) postJSON(ctx context.Context, endpoint string, payload interface{}) error {

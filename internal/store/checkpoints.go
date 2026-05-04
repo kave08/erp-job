@@ -17,16 +17,18 @@ const (
 type Operation string
 
 const (
-	OperationInvoiceSaleFactor     Operation = "invoice_sale_factor"
-	OperationInvoiceSaleOrder      Operation = "invoice_sale_order"
-	OperationInvoiceSalePayment    Operation = "invoice_sale_payment"
-	OperationInvoiceSalerSelect    Operation = "invoice_saler_select"
-	OperationInvoiceSaleProforma   Operation = "invoice_sale_proforma"
-	OperationInvoiceSaleCenter     Operation = "invoice_sale_center"
-	OperationInvoiceSaleTypeSelect Operation = "invoice_sale_type_select"
-	OperationCustomerSaleCustomer  Operation = "customer_sale_customer"
-	OperationProductsGoods         Operation = "products_goods"
-	OperationBaseDataDeliverCenter Operation = "base_data_deliver_center"
+	OperationInvoiceSaleFactor        Operation = "invoice_sale_factor"
+	OperationInvoiceSaleOrder         Operation = "invoice_sale_order"
+	OperationInvoiceSalePayment       Operation = "invoice_sale_payment"
+	OperationInvoiceSalerSelect       Operation = "invoice_saler_select"
+	OperationInvoiceSaleSellerVisitor Operation = "invoice_sale_seller_visitor"
+	OperationInvoiceSaleProforma      Operation = "invoice_sale_proforma"
+	OperationInvoiceSaleCenter        Operation = "invoice_sale_center"
+	OperationInvoiceSaleTypeSelect    Operation = "invoice_sale_type_select"
+	OperationCustomerSaleCustomer     Operation = "customer_sale_customer"
+	OperationProductsGoods            Operation = "products_goods"
+	OperationBaseDataDeliverCenter    Operation = "base_data_deliver_center"
+	OperationBaseDataSaleCenterSelect Operation = "base_data_sale_center_select"
 )
 
 type DeliveryStatus string

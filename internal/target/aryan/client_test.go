@@ -16,6 +16,18 @@ import (
 	"erp-job/internal/retry"
 )
 
+func paramByName(params []ParamEntry, name string) interface{} {
+	for _, p := range params {
+		if p.Name == name {
+			if p.ArrayValue != nil {
+				return p.ArrayValue
+			}
+			return p.Value
+		}
+	}
+	return nil
+}
+
 func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	t.Parallel()
 
@@ -24,7 +36,7 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 		APIKey:  "test-api-key",
 	}
 
-	var received []domain.SaleFactor
+	var received []ParamsPayload
 	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -43,18 +55,16 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}
 
 	invoice := domain.Invoices{
-		CustomerID:      11,
-		InvoiceDate:     "14030101",
-		WareHouseID:     22,
-		CodeMahal:       33,
-		SNoePardakht:    44,
-		CCForoshandeh:   55,
-		CodeForoshandeh: 66,
-		InvoiceId:       77,
-		ProductID:       88,
-		ProductCount:    99,
-		ProductFee:      111,
-		TozihatFaktor:   "invoice detail",
+		CustomerID:    11,
+		InvoiceDate:   "14030101",
+		WareHouseID:   22,
+		SNoePardakht:  44,
+		CCForoshandeh: 55,
+		InvoiceId:     77,
+		ProductID:     88,
+		ProductCount:  99,
+		ProductFee:    111,
+		TozihatFaktor: "invoice detail",
 	}
 
 	if err := client.PostInvoiceToSaleFactor(context.Background(), []domain.Invoices{invoice}); err != nil {
@@ -66,44 +76,63 @@ func TestPostInvoiceToSaleFactorSendsMappedPayload(t *testing.T) {
 	}
 
 	got := received[0]
-	if got.CustomerID != invoice.CustomerID {
-		t.Fatalf("unexpected customer id: %d", got.CustomerID)
+	if got.ID != "SaleFactor" {
+		t.Fatalf("unexpected payload id: %s", got.ID)
 	}
-	if got.StockID != invoice.WareHouseID {
-		t.Fatalf("unexpected stock id: %d", got.StockID)
+
+	params := got.Params
+
+	if v := paramByName(params, "CustomerId"); v != float64(11) {
+		t.Fatalf("unexpected customer id: %v", v)
 	}
-	if got.SaleTypeID != invoice.SNoePardakht {
-		t.Fatalf("unexpected sale type id: %d", got.SaleTypeID)
+	if v := paramByName(params, "StockId"); v != float64(22) {
+		t.Fatalf("unexpected stock id: %v", v)
 	}
-	if got.DeliveryCenterID != invoice.SNoePardakht {
-		t.Fatalf("unexpected delivery center id: %d", got.DeliveryCenterID)
+	if v := paramByName(params, "SaleTypeId"); v != float64(44) {
+		t.Fatalf("unexpected sale type id: %v", v)
 	}
-	if got.SaleCenterID != invoice.WareHouseID {
-		t.Fatalf("unexpected sale center id: %d", got.SaleCenterID)
+	if v := paramByName(params, "DeliveryCenterID"); v != float64(44) {
+		t.Fatalf("unexpected delivery center id: %v", v)
 	}
-	if got.PaymentWayID != invoice.SNoePardakht {
-		t.Fatalf("unexpected payment way id: %d", got.PaymentWayID)
+	if v := paramByName(params, "SaleCenterID"); v != float64(22) {
+		t.Fatalf("unexpected sale center id: %v", v)
 	}
-	if got.SellerID != invoice.CCForoshandeh {
-		t.Fatalf("unexpected seller id: %d", got.SellerID)
+	if v := paramByName(params, "PaymentWayID"); v != float64(44) {
+		t.Fatalf("unexpected payment way id: %v", v)
 	}
-	if got.SaleManID != invoice.CodeForoshandeh {
-		t.Fatalf("unexpected sale man id: %d", got.SaleManID)
+	if v := paramByName(params, "SellerVisitorID"); v != float64(55) {
+		t.Fatalf("unexpected seller visitor id: %v", v)
 	}
-	if got.SecondNumber != "77" {
-		t.Fatalf("unexpected second number: %s", got.SecondNumber)
+	if v := paramByName(params, "SecondNumber"); v != float64(77) {
+		t.Fatalf("unexpected second number: %v", v)
 	}
-	if got.ServiceGoodsID != invoice.ProductID {
-		t.Fatalf("unexpected service goods id: %d", got.ServiceGoodsID)
+	if v := paramByName(params, "VoucherDesc"); v != "ETL-Form Fararavand" {
+		t.Fatalf("unexpected voucher desc: %v", v)
 	}
-	if got.Quantity != float64(invoice.ProductCount) {
-		t.Fatalf("unexpected quantity: %f", got.Quantity)
+	if v := paramByName(params, "isrow"); v != "1" {
+		t.Fatalf("unexpected isrow: %v", v)
 	}
-	if got.Fee != float64(invoice.ProductFee) {
-		t.Fatalf("unexpected fee: %f", got.Fee)
+
+	inserted, ok := paramByName(params, "[Inserted]").([]interface{})
+	if !ok || len(inserted) != 5 {
+		t.Fatalf("unexpected [Inserted]: %v", paramByName(params, "[Inserted]"))
 	}
-	if got.DetailDesc != invoice.TozihatFaktor {
-		t.Fatalf("unexpected detail description: %s", got.DetailDesc)
+	if inserted[1] != float64(88) {
+		t.Fatalf("unexpected product id in [Inserted]: %v", inserted[1])
+	}
+	if inserted[2] != float64(99) {
+		t.Fatalf("unexpected quantity in [Inserted]: %v", inserted[2])
+	}
+	if inserted[3] != float64(111) {
+		t.Fatalf("unexpected fee in [Inserted]: %v", inserted[3])
+	}
+
+	elInserted, ok := paramByName(params, "[el_Inserted]").([]interface{})
+	if !ok || len(elInserted) != 3 {
+		t.Fatalf("unexpected [el_Inserted]: %v", paramByName(params, "[el_Inserted]"))
+	}
+	if elInserted[0] != float64(55) {
+		t.Fatalf("unexpected seller id in [el_Inserted]: %v", elInserted[0])
 	}
 }
 
@@ -115,7 +144,7 @@ func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
 		APIKey:  "test-api-key",
 	}
 
-	var received []domain.SaleOrder
+	var received []ParamsPayload
 	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -141,23 +170,24 @@ func TestPostInvoiceToSaleOrderUsesInvoiceIDAsSecondNumber(t *testing.T) {
 	}
 
 	if len(received) != 1 {
-		t.Fatalf("expected 1 sale order payload, got %#v", received)
+		t.Fatalf("expected 1 sale order payload, got %d", len(received))
 	}
 
-	if received[0].SecondNumber != 91 {
-		t.Fatalf("expected sale order second number 91, got %#v", received)
+	params := received[0].Params
+	if v := paramByName(params, "SecondNumber"); v != float64(91) {
+		t.Fatalf("expected second number 91, got %v", v)
 	}
-	if received[0].SaleTypeId != 44 {
-		t.Fatalf("unexpected sale type id: %d", received[0].SaleTypeId)
+	if v := paramByName(params, "SaleTypeId"); v != float64(44) {
+		t.Fatalf("unexpected sale type id: %v", v)
 	}
-	if received[0].DeliveryCenterID != 44 {
-		t.Fatalf("unexpected delivery center id: %d", received[0].DeliveryCenterID)
+	if v := paramByName(params, "DeliveryCenterID"); v != float64(44) {
+		t.Fatalf("unexpected delivery center id: %v", v)
 	}
-	if received[0].SaleCenterID != 22 {
-		t.Fatalf("unexpected sale center id: %d", received[0].SaleCenterID)
+	if v := paramByName(params, "SaleCenterID"); v != float64(22) {
+		t.Fatalf("unexpected sale center id: %v", v)
 	}
-	if received[0].SellerVisitorID != 66 {
-		t.Fatalf("unexpected seller visitor id: %d", received[0].SellerVisitorID)
+	if v := paramByName(params, "SellerVisitorID"); v != float64(66) {
+		t.Fatalf("unexpected seller visitor id: %v", v)
 	}
 }
 
@@ -169,7 +199,7 @@ func TestPostInvoiceToSaleProformaAlignsReferenceIDs(t *testing.T) {
 		APIKey:  "test-api-key",
 	}
 
-	var received []domain.SaleProforma
+	var received []ParamsPayload
 	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -195,17 +225,21 @@ func TestPostInvoiceToSaleProformaAlignsReferenceIDs(t *testing.T) {
 	}
 
 	if len(received) != 1 {
-		t.Fatalf("expected 1 sale proforma payload, got %#v", received)
+		t.Fatalf("expected 1 sale proforma payload, got %d", len(received))
 	}
 
-	if received[0].SaleTypeId != 44 {
-		t.Fatalf("unexpected sale type id: %d", received[0].SaleTypeId)
+	params := received[0].Params
+	if v := paramByName(params, "SaleTypeId"); v != float64(44) {
+		t.Fatalf("unexpected sale type id: %v", v)
 	}
-	if received[0].DeliveryCenterID != 44 {
-		t.Fatalf("unexpected delivery center id: %d", received[0].DeliveryCenterID)
+	if v := paramByName(params, "DeliveryCenterID"); v != float64(44) {
+		t.Fatalf("unexpected delivery center id: %v", v)
 	}
-	if received[0].SaleCenterID != 22 {
-		t.Fatalf("unexpected sale center id: %d", received[0].SaleCenterID)
+	if v := paramByName(params, "SaleCenterID"); v != float64(22) {
+		t.Fatalf("unexpected sale center id: %v", v)
+	}
+	if v := paramByName(params, "SellerVisitorID"); v != float64(66) {
+		t.Fatalf("unexpected seller visitor id: %v", v)
 	}
 }
 
@@ -217,7 +251,7 @@ func TestPostInvoiceToSalePaymentUsesSNoePardakht(t *testing.T) {
 		APIKey:  "test-api-key",
 	}
 
-	var received []domain.SalePaymentSelect
+	var received []ParamsPayload
 	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -229,15 +263,20 @@ func TestPostInvoiceToSalePaymentUsesSNoePardakht(t *testing.T) {
 	}
 
 	if err := client.PostInvoiceToSalePayment(context.Background(), []domain.Invoices{{
-		PaymentTypeID:  7,
 		SNoePardakht:   44,
 		TxtNoePardakht: "cash",
 	}}); err != nil {
 		t.Fatalf("PostInvoiceToSalePayment returned error: %v", err)
 	}
 
-	if len(received) != 1 || received[0].PaymentWayID != 44 {
-		t.Fatalf("expected payment way id 44 from SNoePardakht, got %#v", received)
+	if len(received) != 1 {
+		t.Fatalf("expected 1 payment payload, got %d", len(received))
+	}
+	if v := paramByName(received[0].Params, "PaymentWayID"); v != float64(44) {
+		t.Fatalf("expected payment way id 44, got %v", v)
+	}
+	if v := paramByName(received[0].Params, "PaymentwayDesc"); v != "cash" {
+		t.Fatalf("expected payment way desc 'cash', got %v", v)
 	}
 }
 
@@ -275,7 +314,7 @@ func TestPostInvoiceToSaleTypeSelectUsesStableCodeFromSNoePardakht(t *testing.T)
 		APIKey:  "test-api-key",
 	}
 
-	var received []domain.SaleTypeSelect
+	var received []ParamsPayload
 	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
 	client.httpClient = &http.Client{
 		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
@@ -288,20 +327,19 @@ func TestPostInvoiceToSaleTypeSelectUsesStableCodeFromSNoePardakht(t *testing.T)
 
 	if err := client.PostInvoiceToSaleTypeSelect(context.Background(), []domain.Invoices{{
 		SNoePardakht:   44,
-		Codekala:       "should-not-be-used",
 		TxtNoePardakht: "cash",
 	}}); err != nil {
 		t.Fatalf("PostInvoiceToSaleTypeSelect returned error: %v", err)
 	}
 
 	if len(received) != 1 {
-		t.Fatalf("expected 1 sale type payload, got %#v", received)
+		t.Fatalf("expected 1 sale type payload, got %d", len(received))
 	}
-	if received[0].BuySaleTypeCode != "44" {
-		t.Fatalf("unexpected sale type code: %q", received[0].BuySaleTypeCode)
+	if v := paramByName(received[0].Params, "BuySaleTypeCode"); v != "44" {
+		t.Fatalf("unexpected sale type code: %v", v)
 	}
-	if received[0].BuySaleTypeDesc != "cash" {
-		t.Fatalf("unexpected sale type desc: %q", received[0].BuySaleTypeDesc)
+	if v := paramByName(received[0].Params, "BuySaleTypeDesc"); v != "cash" {
+		t.Fatalf("unexpected sale type desc: %v", v)
 	}
 }
 
@@ -369,6 +407,40 @@ func TestPostInvoiceToSaleFactorDoesNotRetryPermanentFailure(t *testing.T) {
 
 	if attempts != 1 {
 		t.Fatalf("expected 1 attempt for permanent failure, got %d", attempts)
+	}
+}
+
+func TestPostAddSubElementSelectSendsParamsFormat(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.AryanApp{
+		BaseURL: serverURLPlaceholder,
+		APIKey:  "test-api-key",
+	}
+
+	var received ParamsPayload
+	client := newClient(cfg, testTelemetry(t), nil, retry.DefaultPolicy(), circuitbreaker.New(5, 30*time.Second))
+	client.httpClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			if r.URL.Path != "/AddSubElementSelect" {
+				t.Fatalf("unexpected path: %s", r.URL.Path)
+			}
+			if err := json.NewDecoder(r.Body).Decode(&received); err != nil {
+				t.Fatalf("decode request body: %v", err)
+			}
+			return newResponse(http.StatusOK, ""), nil
+		}),
+	}
+
+	if err := client.PostAddSubElementSelect(context.Background()); err != nil {
+		t.Fatalf("PostAddSubElementSelect returned error: %v", err)
+	}
+
+	if received.ID != "AddSubElementSelect" {
+		t.Fatalf("unexpected payload id: %s", received.ID)
+	}
+	if v := paramByName(received.Params, "IsStruct"); v != float64(1) {
+		t.Fatalf("unexpected IsStruct value: %v", v)
 	}
 }
 

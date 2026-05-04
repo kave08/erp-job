@@ -35,9 +35,12 @@ type Target interface {
 	PostInvoiceToSalePayment(ctx context.Context, invoices []domain.Invoices) error
 	PostInvoiceToSaleCenter(ctx context.Context, invoices []domain.Invoices) error
 	PostInvoiceToSalerSelect(ctx context.Context, invoices []domain.Invoices) error
+	PostInvoiceToSaleSellerVisitor(ctx context.Context, invoices []domain.Invoices) error
 	PostInvoiceToSaleProforma(ctx context.Context, invoices []domain.Invoices) error
 	PostInvoiceToSaleTypeSelect(ctx context.Context, invoices []domain.Invoices) error
 	PostBaseDataToDeliverCenterSaleSelect(ctx context.Context, baseData domain.BaseData) error
+	PostBaseDataToSaleCenterSelect(ctx context.Context, baseData domain.BaseData) error
+	PostAddSubElementSelect(ctx context.Context) error
 }
 
 type Job struct {
@@ -94,6 +97,10 @@ func (j *Job) Run(ctx context.Context) (runErr error) {
 		j.telemetry.RecordRun(ctx, result, time.Since(startedAt))
 		span.End()
 	}()
+
+	if err := j.target.PostAddSubElementSelect(ctx); err != nil {
+		return fmt.Errorf("add sub element select failed: %w", err)
+	}
 
 	steps := []struct {
 		name   string
@@ -182,6 +189,18 @@ func (j *Job) syncInvoices(ctx context.Context, invoices []domain.Invoices) erro
 			},
 		},
 		{
+			name:      "sale seller visitor",
+			operation: store.OperationInvoiceSaleSellerVisitor,
+			post:      j.target.PostInvoiceToSaleSellerVisitor,
+			entityKey: func(item domain.Invoices) (string, error) {
+				visitorID, err := domain.ParseVisitorCode(item.VisitorCode)
+				if err != nil {
+					return "", err
+				}
+				return fmt.Sprintf("visitor:%d", visitorID), nil
+			},
+		},
+		{
 			name:      "sale type select",
 			operation: store.OperationInvoiceSaleTypeSelect,
 			post:      j.target.PostInvoiceToSaleTypeSelect,
@@ -258,13 +277,13 @@ func (j *Job) runProducts(ctx context.Context) error {
 	})
 }
 
-// runBaseData syncs only PaymentTypes to the DeliverCenter_SaleSelect endpoint.
+// runBaseData syncs PaymentTypes to DeliverCenter_SaleSelect and Branches to SaleCenterSelect.
 // Fararavand's BaseData contains many reference types (WareHouses, CustomerTypes,
-// Units, etc.), but the current Aryan integration only requires PaymentTypes for
-// delivery center mapping. If additional base data types need to be synced in the
-// future, extend this function with new operations and target endpoints.
+// Units, etc.), but the current Aryan integration only requires PaymentTypes and Branches.
+// If additional base data types need to be synced in the future, extend this function
+// with new operations and target endpoints.
 func (j *Job) runBaseData(ctx context.Context) error {
-	return runEntitySync(j, ctx, store.EntityBaseData, func(ctx context.Context, pageNumber, pageSize, lastID int) ([]struct {
+	if err := runEntitySync(j, ctx, store.EntityBaseData, func(ctx context.Context, pageNumber, pageSize, lastID int) ([]struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}, error) {
@@ -301,6 +320,49 @@ func (j *Job) runBaseData(ctx context.Context) error {
 				Name string `json:"name"`
 			}) error {
 				return j.target.PostBaseDataToDeliverCenterSaleSelect(ctx, domain.BaseData{PaymentTypes: paymentTypes})
+			},
+		)
+	}); err != nil {
+		return err
+	}
+
+	return runEntitySync(j, ctx, store.EntityBaseData, func(ctx context.Context, pageNumber, pageSize, lastID int) ([]struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}, error) {
+		baseData, err := j.source.FetchBaseData(ctx, pageNumber, pageSize, lastID)
+		if err != nil {
+			return nil, err
+		}
+
+		return baseData.Branches, nil
+	}, func(item struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}) int {
+		return item.ID
+	}, func(ctx context.Context, branches []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}) error {
+		return syncOperation(j, ctx, "base_data", store.EntityBaseData, "sale center select", store.OperationBaseDataSaleCenterSelect, branches,
+			func(item struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			}) int {
+				return item.ID
+			},
+			noErrEntityKey(func(item struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			}) string {
+				return fmt.Sprintf("branch:%d", item.ID)
+			}),
+			func(ctx context.Context, branches []struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			}) error {
+				return j.target.PostBaseDataToSaleCenterSelect(ctx, domain.BaseData{Branches: branches})
 			},
 		)
 	})
